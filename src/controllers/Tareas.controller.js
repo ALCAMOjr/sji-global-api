@@ -178,7 +178,7 @@ export const getExpedientesConTareas = async (req, res) => {
             `SELECT expTribunalA.numero, expTribunalA.nombre, expTribunalA.url, expTribunalA.expediente, 
                     Tareas.id as tareaId, Tareas.tarea, Tareas.fecha_inicio, Tareas.fecha_registro, 
                     Tareas.fecha_entrega, Tareas.fecha_real_entrega, Tareas.fecha_estimada_respuesta, 
-                    Tareas.observaciones, Tareas.estado_tarea, 
+                    Tareas.fecha_cancelacion, Tareas.observaciones, Tareas.estado_tarea, 
                     abogados.id as abogadoId, abogados.username as abogadoUsername
              FROM expTribunalA 
              JOIN Tareas ON expTribunalA.numero = Tareas.exptribunalA_numero
@@ -187,11 +187,11 @@ export const getExpedientesConTareas = async (req, res) => {
 
         const expedienteMap = {};
         expedientes.forEach(expediente => {
-            const { numero, nombre, url, expediente: expedienteDesc, tareaId, tarea, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, observaciones, estado_tarea, abogadoId, abogadoUsername } = expediente;
+            const { numero, nombre, url, expediente: expedienteDesc, tareaId, tarea, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea, abogadoId, abogadoUsername } = expediente;
             if (!expedienteMap[numero]) {
                 expedienteMap[numero] = { numero, nombre, url, expediente: expedienteDesc, tareas: [] };
             }
-            expedienteMap[numero].tareas.push({ tareaId, tarea, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, observaciones, estado_tarea, abogadoId, abogadoUsername });
+            expedienteMap[numero].tareas.push({ tareaId, tarea, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea, abogadoId, abogadoUsername });
         });
 
         const result = Object.values(expedienteMap);
@@ -202,7 +202,6 @@ export const getExpedientesConTareas = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while retrieving the expedientes with tasks', details: error.message });
     }
 };
-
 
 export const getTareasByAbogado = async (req, res) => {
     try {
@@ -224,7 +223,7 @@ export const getTareasByAbogado = async (req, res) => {
         const abogado = abogados[0];
         const [tareas] = await pool.query(
             `SELECT Tareas.id as tareaId, Tareas.tarea, Tareas.fecha_inicio, Tareas.fecha_registro, Tareas.fecha_entrega, 
-                    Tareas.fecha_real_entrega, Tareas.fecha_estimada_respuesta, Tareas.observaciones, Tareas.estado_tarea, 
+                    Tareas.fecha_real_entrega, Tareas.fecha_estimada_respuesta, Tareas.fecha_cancelacion, Tareas.observaciones, Tareas.estado_tarea, 
                     expTribunalA.numero, expTribunalA.nombre, expTribunalA.url, expTribunalA.expediente
              FROM Tareas 
              JOIN expTribunalA ON Tareas.exptribunalA_numero = expTribunalA.numero
@@ -234,11 +233,11 @@ export const getTareasByAbogado = async (req, res) => {
 
         const expedienteMap = {};
         tareas.forEach(tarea => {
-            const { numero, nombre, url, expediente, tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, observaciones, estado_tarea } = tarea;
+            const { numero, nombre, url, expediente, tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea } = tarea;
             if (!expedienteMap[numero]) {
                 expedienteMap[numero] = { numero, nombre, url, expediente, tareas: [] };
             }
-            expedienteMap[numero].tareas.push({ tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, observaciones, estado_tarea });
+            expedienteMap[numero].tareas.push({ tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea });
         });
 
         const result = Object.values(expedienteMap);
@@ -249,7 +248,6 @@ export const getTareasByAbogado = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while retrieving the tasks for the specified abogado', details: error.message });
     }
 };
-
 export const getTareasByExpediente = async (req, res) => {
     try {
         const { userId } = req;
@@ -272,7 +270,7 @@ export const getTareasByExpediente = async (req, res) => {
 
         const [tareas] = await pool.query(
             `SELECT Tareas.id as tareaId, Tareas.tarea, Tareas.fecha_inicio, Tareas.fecha_registro, Tareas.fecha_entrega, 
-                    Tareas.fecha_real_entrega, Tareas.fecha_estimada_respuesta, Tareas.observaciones, Tareas.estado_tarea, 
+                    Tareas.fecha_real_entrega, Tareas.fecha_estimada_respuesta, Tareas.fecha_cancelacion, Tareas.observaciones, Tareas.estado_tarea, 
                     expTribunalA.numero, expTribunalA.nombre, expTribunalA.url, expTribunalA.expediente,
                     abogados.id as abogadoId, abogados.username as abogadoUsername
              FROM Tareas 
@@ -284,11 +282,11 @@ export const getTareasByExpediente = async (req, res) => {
 
         const expedienteMap = {};
         tareas.forEach(tarea => {
-            const { numero, nombre, url, expediente, tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, observaciones, estado_tarea, abogadoId, abogadoUsername } = tarea;
+            const { numero, nombre, url, expediente, tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea, abogadoId, abogadoUsername } = tarea;
             if (!expedienteMap[numero]) {
                 expedienteMap[numero] = { numero, nombre, url, expediente, tareas: [] };
             }
-            expedienteMap[numero].tareas.push({ tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, observaciones, estado_tarea, abogadoId, abogadoUsername });
+            expedienteMap[numero].tareas.push({ tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea, abogadoId, abogadoUsername });
         });
 
         const result = Object.values(expedienteMap);
@@ -299,6 +297,7 @@ export const getTareasByExpediente = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while retrieving the tasks for the specified expediente', details: error.message });
     }
 };
+
 
 
 export const cancelTask = async (req, res) => {
@@ -348,6 +347,41 @@ export const cancelTask = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while canceling the task', details: error.message });
     }
 };
+
+export const deleteTask = async (req, res) => {
+    try {
+        const { userId } = req;
+        const { taskId } = req.params;
+        const [users] = await pool.query('SELECT * FROM abogados WHERE id = ?', [userId]);
+        if (users.length <= 0) {
+            return res.status(400).send({ error: 'Invalid user id' });
+        }
+
+        const user = users[0];
+        if (user.user_type !== 'coordinador') {
+            return res.status(403).send({ error: 'Unauthorized' });
+        }
+        const [tasks] = await pool.query('SELECT * FROM Tareas WHERE id = ?', [taskId]);
+        if (tasks.length <= 0) {
+            return res.status(400).send({ error: 'Task not found' });
+        }
+
+        const tarea = tasks[0];
+
+        const allowedStatuses = ['Cancelada', 'Terminada'];
+        if (!allowedStatuses.includes(tarea.estado_tarea)) {
+            return res.status(400).send({ error: 'Task cannot be deleted in the current status' });
+        }
+
+        await pool.query('DELETE FROM Tareas WHERE id = ?', [taskId]);
+
+        res.status(200).send({ message: 'Task deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: 'An error occurred while deleting the task', details: error.message });
+    }
+};
+
 
 export const hasTareasForExpediente = async (req, res) => {
     try {

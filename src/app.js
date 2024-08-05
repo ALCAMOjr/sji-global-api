@@ -12,12 +12,11 @@ const app = express()
 app.use(cors());
 app.use(express.json())
 app.use('/api', AbogadosRoutes)
-app.use('/api', TareasRoutes)
 app.use('/api', ExpedienteRuter)
 app.use('/api', ExpedienteSialRouter)
 app.use('/api', PositionRouter)
 app.use('/api', ReporteRouter)
-
+app.use('/api', TareasRoutes)
 
 
 export { app };

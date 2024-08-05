@@ -20,8 +20,6 @@ const databaseString = NODE_ENV === 'test' ? DATABASE_TEST : DATABASE;
 
 let pool;
 
-console.log(DB_PORT, HOST_DATABASE, USER_DATABASE, PASSWORD_DATABASE, databaseString)
-
 try {
   pool = createPool({
     port: DB_PORT,

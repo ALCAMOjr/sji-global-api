@@ -1,4 +1,4 @@
-import { createTask, getTareasUser, startTask, completeTask, getExpedientesConTareas, getTareasByAbogado, cancelTask, hasTareasForExpediente, getTareasByExpediente } from "../controllers/Tareas.controller.js";
+import { createTask, getTareasUser, startTask, completeTask, getExpedientesConTareas, getTareasByAbogado, cancelTask, deleteTask, hasTareasForExpediente, getTareasByExpediente } from "../controllers/Tareas.controller.js";
 import { Router } from "express";
 import abogadoExtractor from '../middleware/abogadoExtractor.js';
 
@@ -9,6 +9,7 @@ router.get('/tarea', abogadoExtractor, getExpedientesConTareas);
 router.post('/tarea/start/:taskId', abogadoExtractor, startTask);
 router.post('/tarea/complete/:taskId', abogadoExtractor, completeTask);
 router.post('/tarea/cancel/:taskId', abogadoExtractor, cancelTask);
+router.post('/tarea/delete/:taskId', abogadoExtractor, deleteTask);
 router.get('/tarea/user', abogadoExtractor, getTareasUser);
 router.get('/tarea/:abogado_username', abogadoExtractor, getTareasByAbogado);
 router.get('/tarea/expediente/:exptribunalA_numero', abogadoExtractor, getTareasByExpediente);
