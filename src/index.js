@@ -2,7 +2,22 @@ import dotenv from 'dotenv'
 import { app } from "./app.js"
 import { initializeCoordinador } from './init.js'
 import { UploadFileasync, uploadCSVToEtapasTv } from './helpers/UploadData.js'
+import { updateExpedientes } from './helpers/UpdateData.js';
+import cron from 'node-cron';
+import { checkAndCancelOverdueTasks } from './helpers/CancelTask.js'; 
 dotenv.config()
+
+
+cron.schedule('0 20 * * 5', async () => { // '0 20 * * 5' es el cron schedule para viernes a las 8 PM
+    await updateExpedientes();  
+}, {
+    scheduled: true,
+    timezone: "America/Monterrey" 
+});
+
+cron.schedule('0 */12 * * *', () => {
+    checkAndCancelOverdueTasks();
+});
 
 
 
