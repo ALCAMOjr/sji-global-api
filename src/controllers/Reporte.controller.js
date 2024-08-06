@@ -16,84 +16,121 @@ export const getReporte = async (req, res) => {
         }
 
         const [results] = await pool.query(`
+        -- Consulta 1: Tomar datos de CreditosSIAL
         WITH CreditosEtapas AS (
             SELECT 
-                c.num_credito,
-                c.ultima_etapa_aprobada,
-                c.fecha_ultima_etapa_aprobada,
-                e.secuencia AS secuencia_etapa_aprobada
-            FROM CreditosSIAL c
-            LEFT JOIN EtapasSial e ON c.ultima_etapa_aprobada = e.etapa
+                num_credito,
+                ultima_etapa_aprobada,
+                fecha_ultima_etapa_aprobada,
+                macroetapa_aprobada
+            FROM CreditosSIAL
         ),
+        
         ExpTribunalEtapas AS (
             SELECT 
                 etd.expTribunalA_numero,
-                etd.fecha,
+                etd.fecha AS fecha_original,  -- Mantener el campo original
                 etd.etapa,
                 etd.termino,
-                etv.secuencia AS secuencia_etapa_tv,
-                ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY STR_TO_DATE(etd.fecha, '%d/%b./%Y') DESC) AS row_num
+                etd.notificacion,
+                etv.macroetapa,
+                -- Convertir fecha de formato con meses en español a formato de fecha
+                CASE
+                    WHEN etd.fecha LIKE '%ene.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'ene.', '01'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%feb.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'feb.', '02'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%mar.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'mar.', '03'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%abr.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'abr.', '04'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%may.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'may.', '05'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%jun.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'jun.', '06'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%jul.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'jul.', '07'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%ago.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'ago.', '08'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%sep.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'sep.', '09'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%oct.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'oct.', '10'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%nov.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'nov.', '11'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%dic.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'dic.', '12'), '%d/%m/%Y')
+                    ELSE NULL
+                END AS fecha_formateada  -- Campo adicional para trabajar internamente
             FROM expTribunalDetA etd
             LEFT JOIN EtapasTv etv ON etd.etapa = etv.etapa AND etd.termino = etv.termino
         ),
+        
+        ExpTribunalEtapasOrdenadas AS (
+            SELECT 
+                expTribunalA_numero,
+                fecha_original,
+                etapa,
+                termino,
+                notificacion,
+                macroetapa,
+                fecha_formateada,
+                ROW_NUMBER() OVER (PARTITION BY expTribunalA_numero ORDER BY fecha_formateada DESC) AS row_num
+            FROM ExpTribunalEtapas
+        ),
+        
         Coincidentes AS (
             SELECT 
                 ce.num_credito,
                 ce.ultima_etapa_aprobada,
                 ce.fecha_ultima_etapa_aprobada,
-                ce.secuencia_etapa_aprobada,
+                ce.macroetapa_aprobada,
                 ete.expTribunalA_numero,
-                ete.fecha,
+                ete.fecha_original AS fecha,  -- Mantener la fecha original
                 ete.etapa,
                 ete.termino,
-                ete.secuencia_etapa_tv
+                ete.notificacion,
+                ete.macroetapa
             FROM CreditosEtapas ce
-            JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
+            JOIN ExpTribunalEtapasOrdenadas ete ON ce.num_credito = ete.expTribunalA_numero
             WHERE ete.row_num = 1
         ),
+        
         NoCoincidentes AS (
             SELECT 
                 c.num_credito,
                 c.ultima_etapa_aprobada,
                 c.fecha_ultima_etapa_aprobada,
-                NULL AS secuencia_etapa_aprobada,
+                c.macroetapa_aprobada,
                 NULL AS expTribunalA_numero,
                 NULL AS fecha,
                 NULL AS etapa,
                 NULL AS termino,
-                NULL AS secuencia_etapa_tv
+                NULL AS notificacion,
+                NULL AS macroetapa
             FROM CreditosSIAL c
             LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
             WHERE etd.expTribunalA_numero IS NULL
         ),
+        
         posicionExpediente AS (
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
                 fecha_ultima_etapa_aprobada,
-                secuencia_etapa_aprobada,
+                macroetapa_aprobada,
                 expTribunalA_numero,
-                fecha,
+                fecha,  -- Fecha original en formato español
                 etapa,
                 termino,
-                secuencia_etapa_tv
+                notificacion,
+                macroetapa
             FROM Coincidentes
-            
+        
             UNION ALL
-            
+        
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
                 fecha_ultima_etapa_aprobada,
-                secuencia_etapa_aprobada,
+                macroetapa_aprobada,
                 expTribunalA_numero,
                 fecha,
                 etapa,
                 termino,
-                secuencia_etapa_tv
+                notificacion,
+                macroetapa
             FROM NoCoincidentes
         )
-        
+                
         SELECT
             COUNT(num_credito) AS 'Creditos Infonavit',
             COUNT(CASE 
@@ -104,6 +141,7 @@ export const getReporte = async (req, res) => {
             COUNT(*) AS Total_Registros
         FROM 
             posicionExpediente;
+        
         
         `);
 
@@ -131,67 +169,103 @@ export const getReporteDetalle = async (req, res) => {
         }
 
         const [results] = await pool.query(`
+        -- Consulta 1: Tomar datos de CreditosSIAL
         WITH CreditosEtapas AS (
             SELECT 
-                c.num_credito,
-                c.ultima_etapa_aprobada,
-                c.fecha_ultima_etapa_aprobada,
-                e.secuencia AS secuencia_etapa_aprobada
-            FROM CreditosSIAL c
-            LEFT JOIN EtapasSial e ON c.ultima_etapa_aprobada = e.etapa
+                num_credito,
+                ultima_etapa_aprobada,
+                fecha_ultima_etapa_aprobada,
+                macroetapa_aprobada
+            FROM CreditosSIAL
         ),
+        
         ExpTribunalEtapas AS (
             SELECT 
                 etd.expTribunalA_numero,
-                etd.fecha,
+                etd.fecha AS fecha_original,  -- Mantener el campo original
                 etd.etapa,
                 etd.termino,
-                etv.secuencia AS secuencia_etapa_tv,
-                ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY STR_TO_DATE(etd.fecha, '%d/%b./%Y') DESC) AS row_num
+                etd.notificacion,
+                etv.macroetapa,
+                -- Convertir fecha de formato con meses en español a formato de fecha
+                CASE
+                    WHEN etd.fecha LIKE '%ene.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'ene.', '01'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%feb.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'feb.', '02'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%mar.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'mar.', '03'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%abr.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'abr.', '04'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%may.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'may.', '05'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%jun.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'jun.', '06'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%jul.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'jul.', '07'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%ago.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'ago.', '08'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%sep.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'sep.', '09'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%oct.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'oct.', '10'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%nov.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'nov.', '11'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%dic.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'dic.', '12'), '%d/%m/%Y')
+                    ELSE NULL
+                END AS fecha_formateada  -- Campo adicional para trabajar internamente
             FROM expTribunalDetA etd
             LEFT JOIN EtapasTv etv ON etd.etapa = etv.etapa AND etd.termino = etv.termino
         ),
+        
+        ExpTribunalEtapasOrdenadas AS (
+            SELECT 
+                expTribunalA_numero,
+                fecha_original,
+                etapa,
+                termino,
+                notificacion,
+                macroetapa,
+                fecha_formateada,
+                ROW_NUMBER() OVER (PARTITION BY expTribunalA_numero ORDER BY fecha_formateada DESC) AS row_num
+            FROM ExpTribunalEtapas
+        ),
+        
         Coincidentes AS (
             SELECT 
                 ce.num_credito,
                 ce.ultima_etapa_aprobada,
                 ce.fecha_ultima_etapa_aprobada,
-                ce.secuencia_etapa_aprobada,
+                ce.macroetapa_aprobada,
                 ete.expTribunalA_numero,
-                ete.fecha,
+                ete.fecha_original AS fecha,  -- Mantener la fecha original
                 ete.etapa,
                 ete.termino,
-                ete.secuencia_etapa_tv
+                ete.notificacion,
+                ete.macroetapa
             FROM CreditosEtapas ce
-            JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
+            JOIN ExpTribunalEtapasOrdenadas ete ON ce.num_credito = ete.expTribunalA_numero
             WHERE ete.row_num = 1
         ),
+        
         NoCoincidentes AS (
             SELECT 
                 c.num_credito,
                 c.ultima_etapa_aprobada,
                 c.fecha_ultima_etapa_aprobada,
-                NULL AS secuencia_etapa_aprobada,
+                c.macroetapa_aprobada,
                 NULL AS expTribunalA_numero,
                 NULL AS fecha,
                 NULL AS etapa,
                 NULL AS termino,
-                NULL AS secuencia_etapa_tv
+                NULL AS notificacion,
+                NULL AS macroetapa
             FROM CreditosSIAL c
             LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
             WHERE etd.expTribunalA_numero IS NULL
         ),
+        
         posicionExpediente AS (
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
                 fecha_ultima_etapa_aprobada,
-                secuencia_etapa_aprobada,
+                macroetapa_aprobada,
                 expTribunalA_numero,
-                fecha,
+                fecha,  -- Fecha original en formato español
                 etapa,
                 termino,
-                secuencia_etapa_tv
+                notificacion,
+                macroetapa
             FROM Coincidentes
             
             UNION ALL
@@ -200,51 +274,41 @@ export const getReporteDetalle = async (req, res) => {
                 num_credito,
                 ultima_etapa_aprobada,
                 fecha_ultima_etapa_aprobada,
-                secuencia_etapa_aprobada,
+                macroetapa_aprobada,
                 expTribunalA_numero,
                 fecha,
                 etapa,
                 termino,
-                secuencia_etapa_tv
+                notificacion,
+                macroetapa
             FROM NoCoincidentes
         )
-
+        
+        -- Agrupar y contar por macroetapa_aprobada
         SELECT
-            COUNT(CASE 
-                WHEN (secuencia_etapa_aprobada IS NULL OR secuencia_etapa_aprobada = '') AND (secuencia_etapa_tv IS NULL OR secuencia_etapa_tv = '') 
-                THEN 1 
-                ELSE NULL 
-            END) AS Asignacion,
-            
-            COUNT(CASE 
-                WHEN secuencia_etapa_aprobada = '1' AND (secuencia_etapa_tv IS NULL OR secuencia_etapa_tv = '') 
-                THEN 1 
-                ELSE NULL 
-            END) AS Presentacion,
-            
-            COUNT(CASE 
-                WHEN secuencia_etapa_aprobada = secuencia_etapa_tv AND secuencia_etapa_aprobada != '1' AND secuencia_etapa_aprobada IS NOT NULL AND secuencia_etapa_aprobada != '' 
-                THEN 1 
-                ELSE NULL 
-            END) AS Nivelado,
-            
-            COUNT(CASE 
-                WHEN secuencia_etapa_aprobada != secuencia_etapa_tv AND secuencia_etapa_aprobada != '1' AND secuencia_etapa_tv != '1' AND secuencia_etapa_aprobada IS NOT NULL AND secuencia_etapa_aprobada != '' AND secuencia_etapa_tv IS NOT NULL AND secuencia_etapa_tv != '' 
-                     AND ABS(CAST(secuencia_etapa_aprobada AS SIGNED) - CAST(secuencia_etapa_tv AS SIGNED)) IN (1, 2)
-                THEN 1 
-                ELSE NULL 
-            END) AS Empuje1o2niveles,
-            
-            COUNT(CASE 
-                WHEN secuencia_etapa_aprobada != secuencia_etapa_tv AND secuencia_etapa_aprobada != '1' AND secuencia_etapa_tv != '1' AND secuencia_etapa_aprobada IS NOT NULL AND secuencia_etapa_aprobada != '' AND secuencia_etapa_tv IS NOT NULL AND secuencia_etapa_tv != '' 
-                     AND ABS(CAST(secuencia_etapa_aprobada AS SIGNED) - CAST(secuencia_etapa_tv AS SIGNED)) > 2
-                THEN 1 
-                ELSE NULL 
-            END) AS Empuje3omasniveles,
-
-            COUNT(*) AS TotalRegistros
-        FROM 
-            posicionExpediente;
+            macroetapa_aprobada AS Etapa,
+            COUNT(num_credito) AS Total_Creditos
+        FROM
+            posicionExpediente
+        GROUP BY
+            macroetapa_aprobada
+        ORDER BY
+            FIELD(macroetapa_aprobada, 
+                '01. Asignación',
+                '02. Convenios previos a demanda',
+                '03. Demanda sin emplazamiento',
+                '04. Emplazamiento sin sentencia',
+                '06. Convenio Judicial',
+                '07. Juicio con sentencia',
+                '08. Proceso de ejecución',
+                '09. Adjudicación',
+                '10. Escrituración en proceso',
+                '15. Autoseguros',
+                '16. Liquidación',
+                '17. Entrega por Poder Notarial',
+                '18. Irrecuperabilidad'
+            );
+        
         `);
 
         res.status(200).json(results);

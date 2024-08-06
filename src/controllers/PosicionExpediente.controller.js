@@ -25,21 +25,35 @@ export const getPositionExpedientes = async (req, res) => {
             FROM CreditosSIAL
         ),
         
-        -- Consulta 2: Tomar datos de expTribunalDetA y EtapasTv, y obtener registros con la fecha más reciente
         ExpTribunalEtapas AS (
             SELECT 
                 etd.expTribunalA_numero,
-                etd.fecha,
+                etd.fecha AS fecha_original,  -- Mantener el campo original
                 etd.etapa,
                 etd.termino,
-                etd.notificacion,  -- Agregar el campo 'notificacion' de expTribunalDetA
+                etd.notificacion,
                 etv.macroetapa,
-                ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY STR_TO_DATE(etd.fecha, '%d/%b./%Y') DESC) AS row_num
+                -- Convertir fecha de formato con meses en español a formato de fecha
+                CASE
+                    WHEN etd.fecha LIKE '%ene.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'ene.', '01'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%feb.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'feb.', '02'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%mar.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'mar.', '03'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%abr.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'abr.', '04'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%may.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'may.', '05'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%jun.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'jun.', '06'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%jul.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'jul.', '07'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%ago.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'ago.', '08'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%sep.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'sep.', '09'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%oct.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'oct.', '10'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%nov.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'nov.', '11'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%dic.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'dic.', '12'), '%d/%m/%Y')
+                    ELSE NULL
+                END AS fecha_formateada,  -- Campo adicional para trabajar internamente
+                ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY STR_TO_DATE(REPLACE(etd.fecha, SUBSTRING_INDEX(etd.fecha, '.', -2), '01'), '%d/%m/%Y') DESC) AS row_num
             FROM expTribunalDetA etd
             LEFT JOIN EtapasTv etv ON etd.etapa = etv.etapa AND etd.termino = etv.termino
         ),
         
-        -- Seleccionar registros con la fecha más reciente para cada expTribunalA_numero
         Coincidentes AS (
             SELECT 
                 ce.num_credito,
@@ -47,10 +61,10 @@ export const getPositionExpedientes = async (req, res) => {
                 ce.fecha_ultima_etapa_aprobada,
                 ce.macroetapa_aprobada,
                 ete.expTribunalA_numero,
-                ete.fecha,
+                ete.fecha_original AS fecha,  -- Mantener la fecha original
                 ete.etapa,
                 ete.termino,
-                ete.notificacion,  -- Seleccionar el campo 'notificacion'
+                ete.notificacion,
                 ete.macroetapa
             FROM CreditosEtapas ce
             JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
@@ -81,7 +95,7 @@ export const getPositionExpedientes = async (req, res) => {
             fecha_ultima_etapa_aprobada,
             macroetapa_aprobada,
             expTribunalA_numero,
-            fecha,
+            fecha,  -- Fecha original en formato español
             etapa,
             termino,
             notificacion,
@@ -101,7 +115,7 @@ export const getPositionExpedientes = async (req, res) => {
             termino,
             notificacion,
             macroetapa
-        FROM NoCoincidentes;
+        FROM NoCoincidentes;        
         `);
 
         res.status(200).json(results);
@@ -112,13 +126,12 @@ export const getPositionExpedientes = async (req, res) => {
     }
 };
 
-
 export const getPositionExpedienteByNumber = async (req, res) => {
     try {
         const { userId } = req;
         const { number } = req.params;  
-        
-        // Verificar si el usuario es válido y tiene el tipo adecuado
+
+  
         const [users] = await pool.query('SELECT * FROM abogados WHERE id = ?', [userId]);
         if (users.length <= 0) {
             return res.status(400).json({ message: 'Invalid user id' });
@@ -128,10 +141,9 @@ export const getPositionExpedienteByNumber = async (req, res) => {
         if (user.user_type !== 'coordinador') {
             return res.status(403).json({ message: 'Unauthorized' });
         }
-
-        // Consulta SQL con el filtro por número de expediente
         const [results] = await pool.query(`
         -- Consulta 1: Tomar datos de CreditosSIAL
+        -- Consulta SQL con el filtro por número de expediente
         WITH CreditosEtapas AS (
             SELECT 
                 num_credito,
@@ -142,22 +154,48 @@ export const getPositionExpedienteByNumber = async (req, res) => {
             WHERE num_credito = ?
         ),
         
-        -- Consulta 2: Tomar datos de expTribunalDetA y EtapasTv, y obtener registros con la fecha más reciente
         ExpTribunalEtapas AS (
             SELECT 
                 etd.expTribunalA_numero,
-                etd.fecha,
+                etd.fecha AS fecha_original,
                 etd.etapa,
                 etd.termino,
-                etd.notificacion,  -- Agregar el campo 'notificacion' de expTribunalDetA
+                etd.notificacion,
                 etv.macroetapa,
-                ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY STR_TO_DATE(etd.fecha, '%d/%b./%Y') DESC) AS row_num
+                -- Convertir fecha de formato con meses en español a formato de fecha
+                CASE
+                    WHEN etd.fecha LIKE '%ene.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'ene.', '01'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%feb.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'feb.', '02'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%mar.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'mar.', '03'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%abr.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'abr.', '04'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%may.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'may.', '05'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%jun.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'jun.', '06'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%jul.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'jul.', '07'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%ago.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'ago.', '08'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%sep.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'sep.', '09'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%oct.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'oct.', '10'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%nov.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'nov.', '11'), '%d/%m/%Y')
+                    WHEN etd.fecha LIKE '%dic.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'dic.', '12'), '%d/%m/%Y')
+                    ELSE NULL
+                END AS fecha_formateada
             FROM expTribunalDetA etd
             LEFT JOIN EtapasTv etv ON etd.etapa = etv.etapa AND etd.termino = etv.termino
             WHERE etd.expTribunalA_numero = ?
         ),
         
-        -- Seleccionar registros con la fecha más reciente para cada expTribunalA_numero
+        ExpTribunalEtapasOrdenadas AS (
+            SELECT 
+                expTribunalA_numero,
+                fecha_original,
+                etapa,
+                termino,
+                notificacion,
+                macroetapa,
+                fecha_formateada,
+                ROW_NUMBER() OVER (PARTITION BY expTribunalA_numero ORDER BY fecha_formateada DESC) AS row_num
+            FROM ExpTribunalEtapas
+        ),
+        
         Coincidentes AS (
             SELECT 
                 ce.num_credito,
@@ -165,13 +203,13 @@ export const getPositionExpedienteByNumber = async (req, res) => {
                 ce.fecha_ultima_etapa_aprobada,
                 ce.macroetapa_aprobada,
                 ete.expTribunalA_numero,
-                ete.fecha,
+                ete.fecha_original AS fecha,
                 ete.etapa,
                 ete.termino,
-                ete.notificacion,  -- Seleccionar el campo 'notificacion'
+                ete.notificacion,
                 ete.macroetapa
             FROM CreditosEtapas ce
-            JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
+            JOIN ExpTribunalEtapasOrdenadas ete ON ce.num_credito = ete.expTribunalA_numero
             WHERE ete.row_num = 1
         ),
         
@@ -220,6 +258,7 @@ export const getPositionExpedienteByNumber = async (req, res) => {
             notificacion,
             macroetapa
         FROM NoCoincidentes;
+        
         `, [number, number, number]);
 
         res.status(200).json(results);
