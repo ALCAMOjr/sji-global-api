@@ -15,8 +15,11 @@ cron.schedule('0 20 * * 5', async () => { // '0 20 * * 5' es el cron schedule pa
     timezone: "America/Monterrey" 
 });
 
-cron.schedule('0 */12 * * *', () => {
+cron.schedule('0 12 * * *', () => {
     checkAndCancelOverdueTasks();
+}, {
+    scheduled: true,
+    timezone: "America/Monterrey"
 });
 
 
