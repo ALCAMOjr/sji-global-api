@@ -1,4 +1,4 @@
-import {createPool} from 'mysql2/promise'
+import { createPool } from 'mysql2/promise';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -8,30 +8,55 @@ const {
   USER_DATABASE,
   HOST_DATABASE,
   DATABASE,
-  DATABASE_TEST,
-  NODE_ENV,
   DB_PORT,
+  PASSWORD_DATABASE_DEV,
+  USER_DATABASE_DEV,
+  HOST_DATABASE_DEV,
+  DATABASE_DEV,
+  DB_PORT_DEV,
+  PASSWORD_DATABASE_TEST,
+  USER_DATABASE_TEST,
+  HOST_DATABASE_TEST,
+  DATABASE_TEST,
+  DB_PORT_TEST,
+  NODE_ENV
 } = process.env;
-
-
-
-
-const databaseString = NODE_ENV === 'test' ? DATABASE_TEST : DATABASE;
 
 let pool;
 
+
 try {
-  pool = createPool({
-    port: DB_PORT,
-    host: HOST_DATABASE,
-    user: USER_DATABASE,
-    password: PASSWORD_DATABASE,
-    database: databaseString,
-     connectTimeout: 10000,
-  });
+  if (NODE_ENV === 'test') {
+    pool = createPool({
+      port: DB_PORT_TEST,
+      host: HOST_DATABASE_TEST,
+      user: USER_DATABASE_TEST,
+      password: PASSWORD_DATABASE_TEST,
+      database: DATABASE_TEST,
+      connectTimeout: 10000,
+    });
+  } else if (NODE_ENV === 'development') {
+    pool = createPool({
+      port: DB_PORT_DEV,
+      host: HOST_DATABASE_DEV,
+      user: USER_DATABASE_DEV,
+      password: PASSWORD_DATABASE_DEV,
+      database: DATABASE_DEV,
+      connectTimeout: 10000,
+    });
+  } else {
+    pool = createPool({
+      port: DB_PORT,
+      host: HOST_DATABASE,
+      user: USER_DATABASE,
+      password: PASSWORD_DATABASE,
+      database: DATABASE,
+      connectTimeout: 10000,
+    });
+  }
 } catch (error) {
   console.error("Failed to create a database connection pool:", error);
-  process.exit(1); 
+  process.exit(1);
 }
 
 export { pool };

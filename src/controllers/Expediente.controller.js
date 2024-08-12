@@ -1,31 +1,28 @@
-import { pool } from "../db.js";
-import dotenv from 'dotenv';
+import ExpedienteDAO from '../utils/ExpedienteDAO.js';
+import AbogadoDAO from '../utils/AbogadoDAO.js';
+import Expediente from '../models/Expediente.js';
+import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
+import ExpedienteDetalle from '../models/ExpedienteDet.js';
 import { initializeBrowser, fillExpTribunalA, scrappingDet } from '../helpers/webScraping.js';
-
-dotenv.config();
 
 export const createExpediente = async (req, res) => {
     const { numero, nombre, url } = req.body;
     const { userId } = req;
 
     try {
-        const parsedNumero = parseInt(numero, 10);
+        const user = await AbogadoDAO.getById(userId);
+        if (!user || user.user_type !== 'coordinador') {
+            return res.status(403).send({ error: 'Unauthorized' });
+        }
 
+        const parsedNumero = parseInt(numero, 10);
         if (!parsedNumero || !nombre) {
             return res.status(400).send({ error: 'Missing required fields: numero and nombre are required.' });
         }
-        const [existingExpedientes] = await pool.query('SELECT * FROM expTribunalA WHERE numero = ?', [parsedNumero]);
+
+        const existingExpedientes = await ExpedienteDAO.findByNumero(parsedNumero);
         if (existingExpedientes.length > 0) {
             return res.status(400).send({ error: 'An expediente with this number already exists.' });
-        }
-
-        const [users] = await pool.query('SELECT * FROM abogados WHERE id = ?', [userId]);
-        if (users.length <= 0) {
-            return res.status(400).send({ error: 'Invalid user id' });
-        }
-        const user = users[0];
-        if (user.user_type !== 'coordinador') {
-            return res.status(403).send({ error: 'Unauthorized' });
         }
 
         let scrapedData = {};
@@ -37,44 +34,28 @@ export const createExpediente = async (req, res) => {
                 scrapedDetails = await scrappingDet(page, url);
                 await browser.close();
             } catch (scrapingError) {
-                console.error('Error during scraping:', scrapingError);
                 return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
             }
         }
 
-        const { juzgado = '', juicio = '', ubicacion = '', partes = '', expediente = '' } = scrapedData;
-
-        await pool.query(
-            'INSERT INTO expTribunalA (numero, nombre, url, expediente, juzgado, juicio, ubicacion, partes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [parsedNumero, nombre, url, expediente, juzgado, juicio, ubicacion, partes]
-        );
+        const expediente = new Expediente(parsedNumero, nombre, url, scrapedData.expediente, scrapedData.juzgado, scrapedData.juicio, scrapedData.ubicacion, scrapedData.partes);
+        await ExpedienteDAO.create(expediente);
 
         if (scrapedDetails.length > 0) {
-            const detalleValues = scrapedDetails.map(detail => [
-                detail.verAcuerdo,
-                detail.fecha,
-                detail.etapa,
-                detail.termino,
-                detail.notificacion,
-                expediente,
-                parsedNumero 
-            ]);
-
-            const insertDetalleQuery = `
-                INSERT INTO expTribunalDetA (ver_acuerdo, fecha, etapa, termino, notificacion, expediente, expTribunalA_numero)
-                VALUES ?
-            `;
-            await pool.query(insertDetalleQuery, [detalleValues]);
+            for (const detail of scrapedDetails) {
+                const expedienteDetalle = new ExpedienteDetalle(null, detail.verAcuerdo, detail.fecha, detail.etapa, detail.termino, detail.notificacion, scrapedData.expediente, parsedNumero);
+                await ExpedienteDetalleDAO.create(expedienteDetalle);
+            }
         }
 
-        const [newExpedientes] = await pool.query('SELECT * FROM expTribunalA WHERE numero = ?', [parsedNumero]);
+        const newExpedientes = await ExpedienteDAO.findByNumero(parsedNumero);
         if (newExpedientes.length <= 0) {
             return res.status(404).send({ error: 'Expediente not found after creation' });
         }
         const newExpediente = newExpedientes[0];
 
-        const [detalles] = await pool.query('SELECT * FROM expTribunalDetA WHERE expTribunalA_numero = ?', [parsedNumero]);
-        res.status(200).send({
+        const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(parsedNumero);
+        res.status(201).send({
             ...newExpediente,
             detalles
         });
@@ -87,21 +68,17 @@ export const createExpediente = async (req, res) => {
 export const getAllExpedientes = async (req, res) => {
     try {
         const { userId } = req;
-        const [users] = await pool.query('SELECT * FROM abogados WHERE id = ?', [userId]);
-        if (users.length <= 0) {
-            return res.status(400).send({ error: 'Invalid user id' });
-        }
-        const user = users[0];
-        if (user.user_type !== 'coordinador') {
+        const user = await AbogadoDAO.getById(userId);
+        if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
         }
 
-        const [expedientes] = await pool.query('SELECT * FROM expTribunalA');
+        const expedientes = await ExpedienteDAO.findAll();
 
         const expedientesConDetalles = [];
 
         for (const expediente of expedientes) {
-            const [detalles] = await pool.query('SELECT * FROM expTribunalDetA WHERE expTribunalA_numero = ?', [expediente.numero]);
+            const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(expediente.numero);
 
             expedientesConDetalles.push({
                 ...expediente,
@@ -116,28 +93,23 @@ export const getAllExpedientes = async (req, res) => {
     }
 };
 
-
 export const getExpedientesByNumero = async (req, res) => {
     try {
         const { numero } = req.params;
         const { userId } = req;
-        const [users] = await pool.query('SELECT * FROM abogados WHERE id = ?', [userId]);
-        if (users.length <= 0) {
-            return res.status(400).send({ error: 'Invalid user id' });
-        }
-        const user = users[0];
-        if (user.user_type !== 'coordinador') {
+        const user = await AbogadoDAO.getById(userId);
+        if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
         }
 
-        const [expedientes] = await pool.query('SELECT * FROM expTribunalA WHERE numero = ?', [numero]);
-        if (expedientes.length <= 0) {
+        const expediente = await ExpedienteDAO.findByNumero(numero);
+        if (expediente.length <= 0) {
             return res.status(404).send({ error: 'Expediente not found' });
         }
-        const expediente = expedientes[0];
-        const [detalles] = await pool.query('SELECT * FROM expTribunalDetA WHERE expTribunalA_numero = ?', [numero]);
+        const expedienteData = expediente[0];
+        const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(numero);
         res.status(200).send({
-            ...expediente,
+            ...expedienteData,
             detalles
         });
     } catch (error) {
@@ -155,16 +127,12 @@ export const updateExpediente = async (req, res) => {
         let { nombre, url } = req.body;
         const { userId } = req;
 
-        const [users] = await pool.query('SELECT * FROM abogados WHERE id = ?', [userId]);
-        if (users.length <= 0) {
-            return res.status(400).send({ error: 'Invalid user id' });
-        }
-        const user = users[0];
-        if (user.user_type !== 'coordinador') {
+        const user = await AbogadoDAO.getById(userId);
+        if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
         }
 
-        const [existingExpedientes] = await pool.query('SELECT * FROM expTribunalA WHERE numero = ?', [numero]);
+        const existingExpedientes = await ExpedienteDAO.findByNumero(numero);
         if (existingExpedientes.length <= 0) {
             return res.status(404).send({ error: 'Expediente not found' });
         }
@@ -175,82 +143,54 @@ export const updateExpediente = async (req, res) => {
                 const scrapedData = await fillExpTribunalA(page, url);
                 const { juzgado = '', juicio = '', ubicacion = '', partes = '', expediente = '' } = scrapedData;
 
-                await pool.query(
-                    'UPDATE expTribunalA SET nombre = IFNULL(?, nombre), url = IFNULL(?, url), expediente = IFNULL(?, expediente), juzgado = ?, juicio = ?, ubicacion = ?, partes = ? WHERE numero = ?',
-                    [nombre, url, expediente, juzgado, juicio, ubicacion, partes, numero]
-                );
+                await ExpedienteDAO.update(new Expediente(numero, nombre, url, expediente, juzgado, juicio, ubicacion, partes));
 
-                await pool.query('DELETE FROM expTribunalDetA WHERE expTribunalA_numero = ?', [numero]);
+                await ExpedienteDetalleDAO.deleteByExpTribunalANumero(numero);
                 const scrapedDetails = await scrappingDet(page, url);
                 if (scrapedDetails.length > 0) {
-                    const detalleValues = scrapedDetails.map(detail => [
-                        detail.verAcuerdo,
-                        detail.fecha,
-                        detail.etapa,
-                        detail.termino,
-                        detail.notificacion,
-                        expediente,
-                        numero
-                    ]);
-                    const insertDetalleQuery = `
-                        INSERT INTO expTribunalDetA (ver_acuerdo, fecha, etapa, termino, notificacion, expediente, expTribunalA_numero)
-                        VALUES ?
-                    `;
-                    await pool.query(insertDetalleQuery, [detalleValues]);
-                }
-            } catch (scrapingError) {
-                if (!res.headersSent) {
-                    return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
-                }
-            } finally {
-                if (browser) {
-                    try {
-                        await browser.close();
-                    } catch (closeError) {
-                        console.error('Error closing browser:', closeError);
+                    for (const detail of scrapedDetails) {
+                        const expedienteDetalle = new ExpedienteDetalle(null, detail.verAcuerdo, detail.fecha, detail.etapa, detail.termino, detail.notificacion, expediente, numero);
+                        await ExpedienteDetalleDAO.create(expedienteDetalle);
                     }
                 }
+            } catch (scrapingError) {
+                return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
+            } finally {
+                if (browser) await browser.close();
             }
         } else {
-            await pool.query(
-                'UPDATE expTribunalA SET nombre = IFNULL(?, nombre), url = IFNULL(?, url), expediente = IFNULL(?, expediente) WHERE numero = ?',
-                [nombre, url, expediente, numero]
-            );
+            await ExpedienteDAO.update(new Expediente(numero, nombre));
         }
-        const [updatedExpedientes] = await pool.query('SELECT * FROM expTribunalA WHERE numero = ?', [numero]);
+
+        const updatedExpedientes = await ExpedienteDAO.findByNumero(numero);
         if (updatedExpedientes.length <= 0) {
-            return res.status(404).send({ error: 'Expediente not found' });
+            return res.status(404).send({ error: 'Expediente not found after update' });
         }
         const updatedExpediente = updatedExpedientes[0];
-        const [detalles] = await pool.query('SELECT * FROM expTribunalDetA WHERE expTribunalA_numero = ?', [numero]);
+
+        const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(numero);
         res.status(200).send({
             ...updatedExpediente,
             detalles
         });
     } catch (error) {
         console.error(error);
-        if (!res.headersSent) {
-            res.status(500).send({ error: 'An error occurred while updating the expediente' });
-        }
+        res.status(500).send({ error: 'An error occurred while updating the expediente' });
     }
 };
 
 export const updateExpedientes = async (req, res) => {
     let browser;
     let page;
+
     const { userId } = req;
     try {
-     
-        const [users] = await pool.query('SELECT * FROM abogados WHERE id = ?', [userId]);
-        if (users.length <= 0) {
-            return res.status(400).send({ error: 'Invalid user id' });
-        }
-        const user = users[0];
-        if (user.user_type !== 'coordinador') {
+        const user = await AbogadoDAO.getById(userId);
+        if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
         }
 
-        const [expedientes] = await pool.query('SELECT * FROM expTribunalA');
+        const expedientes = await ExpedienteDAO.findAll();
 
         for (const expediente of expedientes) {
             const { numero, url } = expediente;
@@ -260,29 +200,17 @@ export const updateExpedientes = async (req, res) => {
 
                     const scrapedData = await fillExpTribunalA(page, url);
                     const { juzgado = '', juicio = '', ubicacion = '', partes = '', expediente: scrapedExpediente = '' } = scrapedData;
-                    await pool.query(
-                        'UPDATE expTribunalA SET nombre = IFNULL(?, nombre), url = IFNULL(?, url), expediente = IFNULL(?, expediente), juzgado = ?, juicio = ?, ubicacion = ?, partes = ? WHERE numero = ?',
-                        [expediente.nombre, url, scrapedExpediente, juzgado, juicio, ubicacion, partes, numero]
-                    );
-                    await pool.query('DELETE FROM expTribunalDetA WHERE expTribunalA_numero = ?', [numero]);
+
+                    await ExpedienteDAO.update(new Expediente(numero, expediente.nombre, url, scrapedExpediente, juzgado, juicio, ubicacion, partes));
+                    await ExpedienteDetalleDAO.deleteByExpTribunalANumero(numero);
+
                     const scrapedDetails = await scrappingDet(page, url);
                     if (scrapedDetails.length > 0) {
-                        const detalleValues = scrapedDetails.map(detail => [
-                            detail.verAcuerdo,
-                            detail.fecha,
-                            detail.etapa,
-                            detail.termino,
-                            detail.notificacion,
-                            scrapedExpediente,
-                            numero
-                        ]);
-                        const insertDetalleQuery = `
-                            INSERT INTO expTribunalDetA (ver_acuerdo, fecha, etapa, termino, notificacion, expediente, expTribunalA_numero)
-                            VALUES ?
-                        `;
-                        await pool.query(insertDetalleQuery, [detalleValues]);
+                        for (const detail of scrapedDetails) {
+                            const expedienteDetalle = new ExpedienteDetalle(null, detail.verAcuerdo, detail.fecha, detail.etapa, detail.termino, detail.notificacion, scrapedExpediente, numero);
+                            await ExpedienteDetalleDAO.create(expedienteDetalle);
+                        }
                     }
-
                 } catch (scrapingError) {
                     console.error(`Error during scraping for expediente number ${numero}:`, scrapingError);
                 } finally {
@@ -305,34 +233,31 @@ export const updateExpedientes = async (req, res) => {
     }
 };
 
-
 export const deleteExpediente = async (req, res) => {
     try {
         const { numero } = req.params;
         const { userId } = req;
 
-        const [users] = await pool.query('SELECT * FROM abogados WHERE id = ?', [userId]);
-        if (users.length <= 0) {
-            return res.status(400).send({ error: 'Invalid user id' });
-        }
-        const user = users[0];
-        if (user.user_type !== 'coordinador') {
+        const user = await AbogadoDAO.getById(userId);
+        if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
         }
-        const [existingExpedientes] = await pool.query('SELECT * FROM expTribunalA WHERE numero = ?', [numero]);
+
+        const existingExpedientes = await ExpedienteDAO.findByNumero(numero);
         if (existingExpedientes.length <= 0) {
             return res.status(404).send({ error: 'Expediente not found' });
         }
-        await pool.query('DELETE FROM expTribunalDetA WHERE expTribunalA_numero = ?', [numero]);
-        const [result] = await pool.query('DELETE FROM expTribunalA WHERE numero = ?', [numero]);
+
+        await ExpedienteDetalleDAO.deleteByExpTribunalANumero(numero);
+        const result = await ExpedienteDAO.delete(numero);
 
         if (result.affectedRows <= 0) {
             return res.status(404).send({ error: 'Failed to delete expediente' });
         }
 
-        res.sendStatus(204); 
+        res.sendStatus(204);
     } catch (error) {
         console.error(error);
         res.status(500).send({ error: 'An error occurred while deleting the expediente' });
     }
-};
+}; 
