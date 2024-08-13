@@ -2,6 +2,7 @@ import { initializeBrowser, fillExpTribunalA, scrappingDet } from './webScraping
 import ExpedienteDAO from '../utils/ExpedienteDAO.js';
 import Expediente from '../models/Expediente.js';
 import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
+import ExpedienteDetalle from '../models/ExpedienteDet.js';
 export const updateExpedientes = async () => {
     let browser;
     let page;
