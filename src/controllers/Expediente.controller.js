@@ -178,12 +178,12 @@ export const updateExpediente = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while updating the expediente' });
     }
 };
-
 export const updateExpedientes = async (req, res) => {
     let browser;
     let page;
-
     const { userId } = req;
+    const updatedExpedientesList = [];
+
     try {
         const user = await AbogadoDAO.getById(userId);
         if (!user || user.user_type !== 'coordinador') {
@@ -211,6 +211,18 @@ export const updateExpedientes = async (req, res) => {
                             await ExpedienteDetalleDAO.create(expedienteDetalle);
                         }
                     }
+
+                    // Get the updated expediente and its details
+                    const updatedExpedientes = await ExpedienteDAO.findByNumero(numero);
+                    if (updatedExpedientes.length > 0) {
+                        const updatedExpediente = updatedExpedientes[0];
+                        const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(numero);
+                        updatedExpedientesList.push({
+                            ...updatedExpediente,
+                            detalles
+                        });
+                    }
+
                 } catch (scrapingError) {
                     console.error(`Error during scraping for expediente number ${numero}:`, scrapingError);
                 } finally {
@@ -225,13 +237,14 @@ export const updateExpedientes = async (req, res) => {
             }
         }
 
-        res.status(200).send({ message: 'All expedientes processed.' });
+        res.status(200).send(updatedExpedientesList);
 
     } catch (error) {
         console.error(error);
         res.status(500).send({ error: 'An error occurred while updating expedientes' });
     }
 };
+
 
 export const deleteExpediente = async (req, res) => {
     try {

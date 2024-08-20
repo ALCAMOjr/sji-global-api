@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { isBefore, startOfDay, format } from 'date-fns';
 import { sendEmail } from './Mailer.js';
 import TareaDAO from '../utils/TareaDAO.js';
 import AbogadoDAO from '../utils/AbogadoDAO.js';
@@ -6,12 +6,14 @@ import { generateTaskCancellationEmail, generateTaskCancellationForCoordinatorEm
 
 export const checkAndCancelOverdueTasks = async () => {
     try {
-        const today = format(new Date(), 'yyyy-MM-dd');
+        const today = startOfDay(new Date()); 
 
         const overdueTasks = await TareaDAO.findExpedientesConTareas();
-        const filteredOverdueTasks = overdueTasks.filter(task => 
-            task.fecha_entrega < today && (task.estado_tarea === 'Asignada' || task.estado_tarea === 'Iniciada')
-        );
+
+        const filteredOverdueTasks = overdueTasks.filter(task => {
+            const fechaEntrega = new Date(task.fecha_entrega);
+            return isBefore(fechaEntrega, today) && (task.estado_tarea === 'Asignada' || task.estado_tarea === 'Iniciada');
+        });
 
         if (filteredOverdueTasks.length > 0) {
             for (const task of filteredOverdueTasks) {
@@ -41,6 +43,3 @@ export const checkAndCancelOverdueTasks = async () => {
         console.error('Error al verificar y cancelar tareas vencidas:', error);
     }
 };
-
-
-

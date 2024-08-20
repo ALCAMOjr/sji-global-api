@@ -27,7 +27,7 @@ async function fillExpTribunalA(page, url) {
     let attempts = 0;
     while (!navigated && attempts < 3) {
         try {
-            await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+            await page.goto(url, { waitUntil: 'networkidle2', timeout: 90000 });
             navigated = true;
         } catch (error) {
             attempts++;
@@ -44,7 +44,7 @@ async function fillExpTribunalA(page, url) {
     }
 
     try {
-        await page.waitForSelector('.show-hide-content.slidingDiv', { timeout: 60000 }); 
+        await page.waitForSelector('.show-hide-content.slidingDiv', { timeout: 90000 }); 
     } catch (error) {
         throw new Error('Error esperando al contenido expandido', error);
     }
@@ -66,7 +66,7 @@ async function scrappingDet(page, url) {
     let navigated = false;
     while (!navigated && attempts < 3) {
         try {
-            await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+            await page.goto(url, { waitUntil: 'networkidle2', timeout: 90000 });
             navigated = true;
         } catch (error) {
             attempts++;

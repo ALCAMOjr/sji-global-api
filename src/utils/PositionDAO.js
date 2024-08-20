@@ -20,7 +20,6 @@ class PositionDao {
                 etd.etapa,
                 etd.termino,
                 etd.notificacion,
-                etv.macroetapa,
                 -- Convertir fecha de formato con meses en español a formato de fecha
                 CASE
                     WHEN etd.fecha LIKE '%ene.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'ene.', '01'), '%d/%m/%Y')
@@ -52,8 +51,7 @@ class PositionDao {
                 ete.fecha_original AS fecha,  -- Mantener la fecha original
                 ete.etapa,
                 ete.termino,
-                ete.notificacion,
-                ete.macroetapa
+                ete.notificacion
             FROM CreditosEtapas ce
             JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
             WHERE ete.row_num = 1
@@ -69,8 +67,7 @@ class PositionDao {
                 NULL AS fecha,
                 NULL AS etapa,
                 NULL AS termino,
-                NULL AS notificacion,
-                NULL AS macroetapa
+                NULL AS notificacion
             FROM CreditosSIAL c
             LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
             WHERE etd.expTribunalA_numero IS NULL
@@ -86,8 +83,7 @@ class PositionDao {
             fecha,  -- Fecha original en formato español
             etapa,
             termino,
-            notificacion,
-            macroetapa
+            notificacion
         FROM Coincidentes
         
         UNION ALL
@@ -101,14 +97,13 @@ class PositionDao {
             fecha,
             etapa,
             termino,
-            notificacion,
-            macroetapa
+            notificacion
         FROM NoCoincidentes;        
         `);
         return results;
     }
     static async getAllbyNumber(number) {
-        const [results] = await pool.query(`
+           const [results] = await pool.query(`
         -- Consulta 1: Tomar datos de CreditosSIAL
         -- Consulta SQL con el filtro por número de expediente
         WITH CreditosEtapas AS (
@@ -128,7 +123,6 @@ class PositionDao {
                 etd.etapa,
                 etd.termino,
                 etd.notificacion,
-                etv.macroetapa,
                 -- Convertir fecha de formato con meses en español a formato de fecha
                 CASE
                     WHEN etd.fecha LIKE '%ene.%' THEN STR_TO_DATE(REPLACE(etd.fecha, 'ene.', '01'), '%d/%m/%Y')
@@ -157,7 +151,6 @@ class PositionDao {
                 etapa,
                 termino,
                 notificacion,
-                macroetapa,
                 fecha_formateada,
                 ROW_NUMBER() OVER (PARTITION BY expTribunalA_numero ORDER BY fecha_formateada DESC) AS row_num
             FROM ExpTribunalEtapas
@@ -173,8 +166,7 @@ class PositionDao {
                 ete.fecha_original AS fecha,
                 ete.etapa,
                 ete.termino,
-                ete.notificacion,
-                ete.macroetapa
+                ete.notificacion
             FROM CreditosEtapas ce
             JOIN ExpTribunalEtapasOrdenadas ete ON ce.num_credito = ete.expTribunalA_numero
             WHERE ete.row_num = 1
@@ -190,8 +182,7 @@ class PositionDao {
                 NULL AS fecha,
                 NULL AS etapa,
                 NULL AS termino,
-                NULL AS notificacion,
-                NULL AS macroetapa
+                NULL AS notificacion
             FROM CreditosSIAL c
             LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
             WHERE etd.expTribunalA_numero IS NULL AND c.num_credito = ?
@@ -207,8 +198,7 @@ class PositionDao {
             fecha,
             etapa,
             termino,
-            notificacion,
-            macroetapa
+            notificacion
         FROM Coincidentes
         
         UNION ALL
@@ -222,8 +212,7 @@ class PositionDao {
             fecha,
             etapa,
             termino,
-            notificacion,
-            macroetapa
+            notificacion
         FROM NoCoincidentes;
         
         `, [number, number, number]);
