@@ -8,7 +8,7 @@ import { checkAndCancelOverdueTasks } from './helpers/CancelTask.js';
 dotenv.config()
 
 
-cron.schedule('* * * * *', async () => { 
+cron.schedule('0 20 * * 5', async () => { 
     await updateExpedientes();  
 }, {
     scheduled: true,

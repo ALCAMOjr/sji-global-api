@@ -20,12 +20,12 @@ export const checkAndCancelOverdueTasks = async () => {
 
                 await TareaDAO.cancelTask(taskId, fecha_cancelacion);
 
-                const abogado = await AbogadoDAO.findById(abogadoId);
+                const abogado = await AbogadoDAO.getById(abogadoId);
                 if (abogado) {
                     const { subject, text } = generateTaskCancellationEmail(abogado, exptribunalA_numero, taskId);
                     await sendEmail(abogado.email, subject, text);
 
-                    const coordinadores = await AbogadoDAO.findByUserType('coordinador');
+                    const coordinadores = await AbogadoDAO.getAllCoordinadores();
                     const { subject: coordSubject, text: coordText } = generateTaskCancellationForCoordinatorEmail(taskId, exptribunalA_numero, abogado);
 
                     for (const coordinador of coordinadores) {
@@ -33,10 +33,14 @@ export const checkAndCancelOverdueTasks = async () => {
                     }
                 }
             }
+            console.info('Todas las tareas han sido Canceladas.');
         } else {
-            console.log('No hay tareas vencidas para cancelar.');
+            console.info('No hay tareas vencidas para cancelar.');
         }
     } catch (error) {
         console.error('Error al verificar y cancelar tareas vencidas:', error);
     }
 };
+
+
+

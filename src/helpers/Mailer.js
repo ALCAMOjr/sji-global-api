@@ -60,3 +60,16 @@ export const generateTaskCancellationForCoordinatorEmail = (taskId, exptribunalA
     const text = `Hola,\n\nLa tarea con ID ${taskId}, asignada al expediente ${exptribunalA_numero}, ha sido cancelada debido al vencimiento de la fecha de entrega. El abogado responsable era ${abogado.nombre} ${abogado.apellido}.\n\nSaludos,\nEquipo de Gestión de Tareas`;
     return { subject, text };
 };
+
+export const generateTaskAssignmentEmail = (abogado, exptribunalA_numero) => {
+    const subject = 'Nueva tarea asignada';
+    const text = `Hola ${abogado.nombre},\n\nSe te ha asignado una nueva tarea para el expediente ${exptribunalA_numero}.\n\nSaludos,\nEquipo de Gestión de Tareas`;
+    return { subject, text };
+};
+
+export const generateTaskCompletionEmail = (user, taskId) => {
+    const subject = 'Tarea completada';
+    const text = `Hola,\n\nEl abogado ${user.nombre} ${user.apellido} ha completado la tarea con ID ${taskId}.\n\nSaludos,\nEquipo de Gestión de Tareas`;
+    return { subject, text };
+};
+

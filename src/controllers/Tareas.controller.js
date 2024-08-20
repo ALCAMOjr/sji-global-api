@@ -3,7 +3,8 @@ import TareaDAO from '../utils/TareaDAO.js';
 import AbogadoDAO from "../utils/AbogadoDAO.js";
 import ExpedienteDAO from "../utils/ExpedienteDAO.js";
 import { format } from 'date-fns';
-import { sendEmail } from '../helpers/Mailer.js';
+import { sendEmail, generateTaskAssignmentEmail, generateTaskCompletionEmail, generateTaskCancellationEmail } from '../helpers/Mailer.js';
+
 export const createTask = async (req, res) => {
     try {
         const { exptribunalA_numero, abogado_id, tarea, fecha_entrega, observaciones } = req.body;
@@ -49,10 +50,9 @@ export const createTask = async (req, res) => {
 
         const tareaCreada = await TareaDAO.create(nuevaTarea);
 
-        const subject = 'Nueva tarea asignada';
-        const text = `Hola ${abogado.nombre},\n\nSe te ha asignado una nueva tarea para el expediente ${exptribunalA_numero}.\n\nSaludos,\nEquipo de Gestión de Tareas`;
-
+        const { subject, text } = generateTaskAssignmentEmail(abogado, exptribunalA_numero);
         await sendEmail(abogado.email, subject, text);
+
 
         res.status(201).send(tareaCreada);
     } catch (error) {
@@ -136,11 +136,11 @@ export const completeTask = async (req, res) => {
         await TareaDAO.completeTask(taskId, fecha_real_entrega);
 
         const coordinadores = await AbogadoDAO.getAllCoordinadores();
-        const subject = 'Tarea completada';
-        const text = `Hola,\n\nEl abogado ${user.nombre} ${user.apellido} ha completado la tarea con ID ${taskId}.\n\nSaludos,\nEquipo de Gestión de Tareas`;
+        const { subject, text } = generateTaskCompletionEmail(user, taskId);
         for (const coordinador of coordinadores) {
             await sendEmail(coordinador.email, subject, text);
         }
+        
 
         res.status(200).send({ message: 'Task completed successfully' });
     } catch (error) {
@@ -284,10 +284,9 @@ export const cancelTask = async (req, res) => {
             return res.status(400).send({ error: 'Associated lawyer not found' });
         }
 
-        const subject = 'Tarea Cancelada';
-        const text = `Hola ${abogado.nombre} ${abogado.apellido},\n\nMalas noticias, se te ha cancelado la tarea con el ID ${taskId}.\n\nSaludos,\nEquipo de Gestión de Tareas`;
-
+        const { subject, text } = generateTaskCancellationEmail(abogado, taskId);
         await sendEmail(abogado.email, subject, text);
+
 
         res.status(200).send({ message: 'Task canceled and notification sent successfully' });
     } catch (error) {
