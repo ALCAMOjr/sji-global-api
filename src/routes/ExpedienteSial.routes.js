@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { uploadAndConvertCsv, getExpedientesByNumero, getAllCreditsSial, getNombrebyNumero } from '../controllers/ExpedienteSial.js';
+import { uploadAndConvertCsv, getExpedientesByNumero, getAllCreditsSial, getNombrebyNumero, getAllEtapas } from '../controllers/ExpedienteSial.js';
 import abogadoExtractor from '../middleware/abogadoExtractor.js';
 
 const router = Router();
@@ -12,5 +12,7 @@ router.post('/expedientesSial/upload-csv', abogadoExtractor, upload.array('files
 router.get('/expedientesSial/', abogadoExtractor, getAllCreditsSial);
 router.get('/expedientesSial/nombre/:number', abogadoExtractor, getNombrebyNumero);
 router.get('/expedientesSial/number/:number', abogadoExtractor, getExpedientesByNumero);
+router.get('/expedientesSial/etapas', abogadoExtractor, getAllEtapas);
+
 
 export default router;

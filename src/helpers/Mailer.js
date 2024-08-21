@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 
 const { NODE_ENV } = process.env;
 
@@ -73,3 +74,10 @@ export const generateTaskCompletionEmail = (user, taskId) => {
     return { subject, text };
 };
 
+
+
+export const getMexicoCityDate = (date) => {
+    const timeZone = 'America/Mexico_City';
+    const zonedDate = toZonedTime(date, timeZone);
+    return formatInTimeZone(zonedDate, timeZone, 'yyyy-MM-dd');
+};

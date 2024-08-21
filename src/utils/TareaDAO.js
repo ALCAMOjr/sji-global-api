@@ -40,6 +40,19 @@ class TareaDAO {
         return rows.map(row => new Tarea(row));
     }
 
+    static async findPendingTasksByExpTribunalANumero(expTribunalANumero) {
+        const query = `
+            SELECT * 
+            FROM Tareas 
+            WHERE exptribunalA_numero = ? 
+              AND (estado_tarea = 'Asignada' OR estado_tarea = 'Iniciada')
+        `;
+
+        const [rows] = await pool.query(query, [expTribunalANumero]);
+        return rows;
+    }
+    
+
 
     static async findByIdAndAbogadoId(taskId, abogadoId) {
         const query = 'SELECT * FROM Tareas WHERE id = ? AND abogado_id = ?';

@@ -143,4 +143,27 @@ export const getExpedientesByNumero = async (req, res) => {
     console.error(error);
     res.status(500).send({ error: 'An error occurred while retrieving the expediente' });
   }
+
+
+  
+};
+export const getAllEtapas = async (req, res) => {
+  try {
+    const { userId } = req;
+
+    const user = await AbogadoDAO.getById(userId);
+    if (!user || user.user_type !== 'coordinador') {
+      return res.status(403).send({ error: 'Unauthorized' });
+    }
+
+    const etapas = await CreditoSialDAO.getAllMacroetapas()
+
+    res.status(200).json({ data: etapas })
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: 'An error occurred while retrieving the expediente' });
+  }
+
+
+  
 };

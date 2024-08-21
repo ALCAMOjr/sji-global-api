@@ -7,6 +7,9 @@ import  Expediente  from '../models/Expediente.js';
         const query = 'INSERT INTO expTribunalA (numero, nombre, url, expediente, juzgado, juicio, ubicacion, partes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
         const values = [expediente.numero, expediente.nombre, expediente.url, expediente.expediente, expediente.juzgado, expediente.juicio, expediente.ubicacion, expediente.partes];
         await pool.query(query, values);
+        const queryDetA = 'INSERT INTO expTribunalDetA (expTribunalA_numero) VALUES (?)';
+        const valuesDetA = [expediente.numero];
+        await pool.query(queryDetA, valuesDetA);
     }
 
     static async findByNumero(numero) {

@@ -4,7 +4,7 @@ import Expediente from '../models/Expediente.js';
 import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
 import ExpedienteDetalle from '../models/ExpedienteDet.js';
 import { initializeBrowser, fillExpTribunalA, scrappingDet } from '../helpers/webScraping.js';
-
+import TareaDAO from '../utils/TareaDAO.js';
 export const createExpediente = async (req, res) => {
     const { numero, nombre, url } = req.body;
     const { userId } = req;
@@ -212,7 +212,6 @@ export const updateExpedientes = async (req, res) => {
                         }
                     }
 
-                    // Get the updated expediente and its details
                     const updatedExpedientes = await ExpedienteDAO.findByNumero(numero);
                     if (updatedExpedientes.length > 0) {
                         const updatedExpediente = updatedExpedientes[0];
@@ -251,6 +250,7 @@ export const deleteExpediente = async (req, res) => {
         const { numero } = req.params;
         const { userId } = req;
 
+    
         const user = await AbogadoDAO.getById(userId);
         if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
@@ -261,8 +261,14 @@ export const deleteExpediente = async (req, res) => {
             return res.status(404).send({ error: 'Expediente not found' });
         }
 
+        const pendingTasks = await TareaDAO.findPendingTasksByExpTribunalANumero(numero);
+        if (pendingTasks.length > 0) {
+            return res.status(400).send({ error: 'Cannot delete expediente with pending tasks' });
+        }
+
         await ExpedienteDetalleDAO.deleteByExpTribunalANumero(numero);
         const result = await ExpedienteDAO.delete(numero);
+
 
         if (result.affectedRows <= 0) {
             return res.status(404).send({ error: 'Failed to delete expediente' });

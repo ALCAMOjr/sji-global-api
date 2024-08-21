@@ -3,15 +3,24 @@ import TareaDAO from '../utils/TareaDAO.js';
 import AbogadoDAO from "../utils/AbogadoDAO.js";
 import ExpedienteDAO from "../utils/ExpedienteDAO.js";
 import { format } from 'date-fns';
-import { sendEmail, generateTaskAssignmentEmail, generateTaskCompletionEmail, generateTaskCancellationEmail } from '../helpers/Mailer.js';
+import { sendEmail, generateTaskAssignmentEmail, generateTaskCompletionEmail, generateTaskCancellationEmail, getMexicoCityDate } from '../helpers/Mailer.js';
 
 export const createTask = async (req, res) => {
     try {
         const { exptribunalA_numero, abogado_id, tarea, fecha_entrega, observaciones } = req.body;
         const { userId } = req;
 
-        if (!exptribunalA_numero || !abogado_id || !fecha_entrega || !tarea) {
-            return res.status(400).send({ error: 'Missing required fields: exptribunalA_numero, abogado_id, fecha_entrega and tarea are required.' });
+        if (!exptribunalA_numero) {
+            return res.status(400).send({ error: 'Cannot assign a task to a non-existent expediente.' });
+        }
+        const expedienteTribunal = await ExpedienteDAO.findByNumero(exptribunalA_numero);
+        
+        if (!expedienteTribunal) {
+            return res.status(400).send({ error: 'Cannot assign a task to a non-existent expediente.' });
+        }
+        
+        if (!abogado_id || !fecha_entrega || !tarea) {
+            return res.status(400).send({ error: 'Missing required fields: abogado_id, fecha_entrega and tarea are required.' });
         }
 
         const user = await AbogadoDAO.getById(userId);
@@ -24,10 +33,6 @@ export const createTask = async (req, res) => {
             return res.status(400).send({ error: 'Invalid abogado id or the user is not an abogado.' });
         }
 
-        const expediente = await ExpedienteDAO.findByNumero(exptribunalA_numero);
-        if (!expediente) {
-            return res.status(400).send({ error: 'Cannot assign a task to a non-existent expediente.' });
-        }
 
         const existingTasks = await TareaDAO.findByExpTribunalANumero(exptribunalA_numero);
         const activeTask = existingTasks.find(task => task.estado_tarea === 'Asignada' || task.estado_tarea === 'Iniciada');
@@ -35,8 +40,9 @@ export const createTask = async (req, res) => {
             return res.status(400).send({ error: 'There is already an active task assigned to this expediente.' });
         }
 
-        const fecha_registro = format(new Date(), 'yyyy-MM-dd');
-        const fecha_entrega_formatted = format(new Date(fecha_entrega), 'yyyy-MM-dd');
+        const fecha_registro = getMexicoCityDate(new Date());
+
+        const fecha_entrega_formatted = getMexicoCityDate(new Date(fecha_entrega));
 
         const nuevaTarea = new Tarea({
             abogado_id,
@@ -52,7 +58,6 @@ export const createTask = async (req, res) => {
 
         const { subject, text } = generateTaskAssignmentEmail(abogado, exptribunalA_numero);
         await sendEmail(abogado.email, subject, text);
-
 
         res.status(201).send(tareaCreada);
     } catch (error) {
@@ -107,12 +112,12 @@ export const startTask = async (req, res) => {
             return res.status(400).send({ error: 'Task not found or you are not authorized to start this task' });
         }
 
-        const fecha_inicio = format(new Date(), 'yyyy-MM-dd');
+        const fecha_inicio = getMexicoCityDate(new Date());
         await TareaDAO.startTask(taskId, fecha_inicio);
 
         res.status(200).send({ message: 'Task started successfully' });
     } catch (error) {
-        console.error(error)
+        console.error(error);
         res.status(500).send({ error: 'An error occurred while starting the task', details: error.message });
     }
 };
@@ -132,7 +137,7 @@ export const completeTask = async (req, res) => {
             return res.status(400).send({ error: 'Task not found or you are not authorized to complete this task' });
         }
 
-        const fecha_real_entrega = format(new Date(), 'yyyy-MM-dd');
+        const fecha_real_entrega = getMexicoCityDate(new Date());
         await TareaDAO.completeTask(taskId, fecha_real_entrega);
 
         const coordinadores = await AbogadoDAO.getAllCoordinadores();
@@ -140,15 +145,13 @@ export const completeTask = async (req, res) => {
         for (const coordinador of coordinadores) {
             await sendEmail(coordinador.email, subject, text);
         }
-        
 
         res.status(200).send({ message: 'Task completed successfully' });
     } catch (error) {
-        console.error(error)
+        console.error(error);
         res.status(500).send({ error: 'An error occurred while completing the task', details: error.message });
     }
 };
-
 
 export const getExpedientesConTareas = async (req, res) => {
     try {
@@ -276,7 +279,7 @@ export const cancelTask = async (req, res) => {
             return res.status(400).send({ error: 'Task already canceled' });
         }
 
-        const fecha_cancelacion = format(new Date(), 'yyyy-MM-dd');
+        const fecha_cancelacion = getMexicoCityDate(new Date());
         await TareaDAO.cancelTask(taskId, fecha_cancelacion);
 
         const abogado = await AbogadoDAO.getById(tarea.abogado_id);
@@ -286,7 +289,6 @@ export const cancelTask = async (req, res) => {
 
         const { subject, text } = generateTaskCancellationEmail(abogado, taskId);
         await sendEmail(abogado.email, subject, text);
-
 
         res.status(200).send({ message: 'Task canceled and notification sent successfully' });
     } catch (error) {
