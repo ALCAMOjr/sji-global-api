@@ -200,10 +200,10 @@ export const getTareasByAbogado = async (req, res) => {
 
         const abogado = await AbogadoDAO.getByUsername(abogado_username);
         if (!abogado || abogado.user_type !== 'abogado') {
-            return res.status(200).send([]);
+            return res.status(200).send({ error: 'Abogado not found' });
         }
 
-        const tareas = await TareaDAO.findActiveTasksByAbogadoId(abogado.id);
+        const tareas = await TareaDAO.findByAbogadoUsername(abogado_username);
 
         const expedienteMap = {};
         tareas.forEach(tarea => {
@@ -216,6 +216,8 @@ export const getTareasByAbogado = async (req, res) => {
 
         const result = Object.values(expedienteMap);
 
+
+        
         res.status(200).send(result);
     } catch (error) {
         console.error(error);

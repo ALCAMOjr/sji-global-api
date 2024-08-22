@@ -3,13 +3,25 @@ import AbogadoDAO from '../utils/AbogadoDAO.js';
 import Expediente from '../models/Expediente.js';
 import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
 import ExpedienteDetalle from '../models/ExpedienteDet.js';
-import { initializeBrowser, fillExpTribunalA, scrappingDet } from '../helpers/webScraping.js';
+import { initializeBrowser, fillExpTribunalA, scrappingDet, scrappingPdf } from '../helpers/webScraping.js';
+import path from "path"
 import TareaDAO from '../utils/TareaDAO.js';
+import fs from 'fs';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const projectRoot = path.resolve(__dirname, '../');
+const pdfDirectory = path.join(projectRoot, 'pdfs'); 
+
 export const createExpediente = async (req, res) => {
     const { numero, nombre, url } = req.body;
     const { userId } = req;
 
     try {
+        // Verificar el tipo de usuario
         const user = await AbogadoDAO.getById(userId);
         if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
@@ -27,17 +39,22 @@ export const createExpediente = async (req, res) => {
 
         let scrapedData = {};
         let scrapedDetails = [];
+        let browser;
+
         if (url) {
             try {
-                const { browser, page } = await initializeBrowser();
+                ({ browser, page } = await initializeBrowser());
+
                 scrapedData = await fillExpTribunalA(page, url);
                 scrapedDetails = await scrappingDet(page, url);
-                await browser.close();
             } catch (scrapingError) {
                 return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
+            } finally {
+                if (browser) {
+                    await browser.close();
+                }
             }
         }
-
         const expediente = new Expediente(parsedNumero, nombre, url, scrapedData.expediente, scrapedData.juzgado, scrapedData.juicio, scrapedData.ubicacion, scrapedData.partes);
         await ExpedienteDAO.create(expediente);
 
@@ -47,20 +64,19 @@ export const createExpediente = async (req, res) => {
                 await ExpedienteDetalleDAO.create(expedienteDetalle);
             }
         }
-
         const newExpedientes = await ExpedienteDAO.findByNumero(parsedNumero);
         if (newExpedientes.length <= 0) {
             return res.status(404).send({ error: 'Expediente not found after creation' });
         }
         const newExpediente = newExpedientes[0];
-
         const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(parsedNumero);
         res.status(201).send({
             ...newExpediente,
             detalles
         });
+
     } catch (error) {
-        console.error(error);
+        console.error('Error en createExpediente:', error.message);
         res.status(500).send({ error: 'An error occurred while creating the expediente' });
     }
 };
@@ -182,8 +198,7 @@ export const updateExpedientes = async (req, res) => {
     let browser;
     let page;
     const { userId } = req;
-    const updatedExpedientesList = [];
-
+    let expedientesConDetalles = [];  
     try {
         const user = await AbogadoDAO.getById(userId);
         if (!user || user.user_type !== 'coordinador') {
@@ -212,16 +227,6 @@ export const updateExpedientes = async (req, res) => {
                         }
                     }
 
-                    const updatedExpedientes = await ExpedienteDAO.findByNumero(numero);
-                    if (updatedExpedientes.length > 0) {
-                        const updatedExpediente = updatedExpedientes[0];
-                        const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(numero);
-                        updatedExpedientesList.push({
-                            ...updatedExpediente,
-                            detalles
-                        });
-                    }
-
                 } catch (scrapingError) {
                     console.error(`Error during scraping for expediente number ${numero}:`, scrapingError);
                 } finally {
@@ -236,7 +241,17 @@ export const updateExpedientes = async (req, res) => {
             }
         }
 
-        res.status(200).send(updatedExpedientesList);
+        const updatedExpedientes = await ExpedienteDAO.findAll();
+
+        for (const expediente of updatedExpedientes) {
+            const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(expediente.numero);
+            expedientesConDetalles.push({
+                ...expediente,
+                detalles
+            });
+        }
+
+        res.status(200).send(expedientesConDetalles);
 
     } catch (error) {
         console.error(error);
@@ -280,3 +295,91 @@ export const deleteExpediente = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while deleting the expediente' });
     }
 }; 
+
+export const getPdf = async (req, res) => {
+    const { userId } = req;
+    const { url, fecha } = req.body;
+
+    if (!url || !fecha) {
+        return res.status(400).send({ error: 'URL and date are required.' });
+    }
+
+    try {
+        const user = await AbogadoDAO.getById(userId);
+        if (!user) {
+            return res.status(403).send({ error: 'Unauthorized' });
+        }
+
+        let browser;
+        let page;
+
+        try {
+            ({ browser, page } = await initializeBrowser());
+
+            const pdfPath = await scrappingPdf(page, url, browser, fecha);
+
+            if (pdfPath) {
+                const fileName = path.basename(pdfPath);
+                res.status(200).send({ pdfPath: `/expediente/filename/${fileName}` });
+            } else {
+                res.status(404).send({ error: 'PDF not found.' });
+            }
+
+        } catch (scrapingError) {
+            console.error('Error durante el scraping del PDF:', scrapingError.message);
+            res.status(500).send({ error: 'Scraping failed for the provided URL.' });
+
+        } finally {
+            if (browser) {
+                await browser.close();
+            }
+        }
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send({ error: 'An error occurred while retrieving the PDF' });
+    }
+};
+
+export const getFilename = async (req, res) => {
+    const { filename } = req.params;
+    const { userId } = req;
+
+    const user = await AbogadoDAO.getById(userId);
+    if (!user) {
+        return res.status(403).send({ error: 'Unauthorized' });
+    }
+
+    const sanitizedFilename = path.basename(filename); 
+    const filePath = path.join(pdfDirectory, sanitizedFilename);
+
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send({ error: 'PDF not found.' });
+    }
+};
+
+
+export const deleteFilename = async (req, res) => {
+    const { filename } = req.params;
+    const { userId } = req
+    const user = await AbogadoDAO.getById(userId);
+    if (!user) {
+        return res.status(403).send({ error: 'Unauthorized' });
+    }
+    const sanitizedFilename = path.basename(filename); 
+    const filePath = path.join(pdfDirectory, sanitizedFilename);
+
+    if (fs.existsSync(filePath)) {
+        try {
+            fs.unlinkSync(filePath);
+            res.status(200).send({ message: 'PDF successfully deleted.' });
+        } catch (error) {
+            console.error(error);
+            res.status(500).send({ error: 'An error occurred while deleting the PDF.' });
+        }
+    } else {
+        res.status(404).send({ error: 'PDF not found.' });
+    }
+};

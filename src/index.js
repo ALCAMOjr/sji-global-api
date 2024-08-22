@@ -7,7 +7,8 @@ import cron from 'node-cron';
 import { checkAndCancelOverdueTasks } from './helpers/CancelTask.js'; 
 dotenv.config()
 
-cron.schedule('*/10 * * * *', async () => { 
+
+cron.schedule('0 20 * * *', async () => { 
     await updateExpedientes();  
 }, {
     scheduled: true,
@@ -15,7 +16,7 @@ cron.schedule('*/10 * * * *', async () => {
 });
 
 
-cron.schedule('* * * * *', () => {
+cron.schedule('0 7 * * *', () => {
     checkAndCancelOverdueTasks();
 }, {
     scheduled: true,
