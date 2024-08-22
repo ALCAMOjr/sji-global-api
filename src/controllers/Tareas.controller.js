@@ -2,7 +2,7 @@ import Tarea from '../models/Tarea.js';
 import TareaDAO from '../utils/TareaDAO.js';
 import AbogadoDAO from "../utils/AbogadoDAO.js";
 import ExpedienteDAO from "../utils/ExpedienteDAO.js";
-import { format } from 'date-fns';
+import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
 import { sendEmail, generateTaskAssignmentEmail, generateTaskCompletionEmail, generateTaskCancellationEmail, getMexicoCityDate } from '../helpers/Mailer.js';
 
 export const createTask = async (req, res) => {
@@ -79,13 +79,24 @@ export const getTareasUser = async (req, res) => {
         const tareas = await TareaDAO.findActiveTasksByAbogadoId(userId);
 
         const expedienteMap = {};
-        tareas.forEach(tarea => {
+        for (const tarea of tareas) {
             const { numero, nombre, url, expediente, tareaId, tarea: tareaDesc, fecha_entrega, observaciones, estado_tarea } = tarea;
+
             if (!expedienteMap[numero]) {
-                expedienteMap[numero] = { numero, nombre, url, expediente, tareas: [] };
+                const details = await ExpedienteDetalleDAO.findByExpTribunalANumero(numero);
+                
+                expedienteMap[numero] = { 
+                    numero, 
+                    nombre, 
+                    url, 
+                    expediente, 
+                    tareas: [], 
+                    details 
+                };
             }
+
             expedienteMap[numero].tareas.push({ tareaId, tarea: tareaDesc, fecha_entrega, observaciones, estado_tarea });
-        });
+        }
 
         const result = Object.values(expedienteMap);
 
@@ -95,7 +106,6 @@ export const getTareasUser = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while retrieving the tasks', details: error.message });
     }
 };
-
 
 export const startTask = async (req, res) => {
     try {
@@ -231,9 +241,8 @@ export const getTareasByExpediente = async (req, res) => {
     try {
         const { userId } = req;
         const { exptribunalA_numero } = req.params;
-
         const user = await AbogadoDAO.getById(userId);
-        if (!user || user.user_type !== 'coordinador') {
+        if (!user) {
             return res.status(403).send({ error: 'Unauthorized' });
         }
 

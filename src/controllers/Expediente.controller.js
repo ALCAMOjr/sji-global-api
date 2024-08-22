@@ -326,7 +326,7 @@ export const getPdf = async (req, res) => {
             }
 
         } catch (scrapingError) {
-            console.error('Error durante el scraping del PDF:', scrapingError.message);
+            console.error(scrapingError);
             res.status(500).send({ error: 'Scraping failed for the provided URL.' });
 
         } finally {
@@ -354,32 +354,9 @@ export const getFilename = async (req, res) => {
     const filePath = path.join(pdfDirectory, sanitizedFilename);
 
     if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
+        res.status(200).sendFile(filePath);
     } else {
         res.status(404).send({ error: 'PDF not found.' });
     }
 };
 
-
-export const deleteFilename = async (req, res) => {
-    const { filename } = req.params;
-    const { userId } = req
-    const user = await AbogadoDAO.getById(userId);
-    if (!user) {
-        return res.status(403).send({ error: 'Unauthorized' });
-    }
-    const sanitizedFilename = path.basename(filename); 
-    const filePath = path.join(pdfDirectory, sanitizedFilename);
-
-    if (fs.existsSync(filePath)) {
-        try {
-            fs.unlinkSync(filePath);
-            res.status(200).send({ message: 'PDF successfully deleted.' });
-        } catch (error) {
-            console.error(error);
-            res.status(500).send({ error: 'An error occurred while deleting the PDF.' });
-        }
-    } else {
-        res.status(404).send({ error: 'PDF not found.' });
-    }
-};
