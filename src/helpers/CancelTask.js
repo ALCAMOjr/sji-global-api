@@ -35,9 +35,7 @@ export const checkAndCancelOverdueTasks = async () => {
                     }
                 }
             }
-            console.info('Todas las tareas han sido Canceladas.');
-        } else {
-            console.info('No hay tareas vencidas para cancelar.');
+           
         }
     } catch (error) {
         console.error('Error al verificar y cancelar tareas vencidas:', error);

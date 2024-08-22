@@ -41,8 +41,6 @@ export const updateExpedientes = async () => {
                 }
             }
         }
-
-        console.info('Todos los expedientes han sido procesados.');
     } catch (error) {
         console.error('Ocurrió un error actualizando los expedientes:', error);
     }
