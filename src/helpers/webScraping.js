@@ -1,13 +1,27 @@
 import puppeteer from 'puppeteer';
 import cheerio from 'cheerio';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'node:path';
 
 const username = process.env.TRIBUNAL_USERNAME;
 const password = process.env.TRIBUNAL_PASSWORD;
 const loginUrl = process.env.TRIBUNAL_URL;
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const parentDir = path.dirname(__dirname); 
+const pdfDirectory = path.join(parentDir, 'pdfs'); 
+
+
+if (!fs.existsSync(pdfDirectory)) {
+    fs.mkdirSync(pdfDirectory);
+}
+
 async function initializeBrowser() {
     const browser = await puppeteer.launch({
-        headless: true, 
+        headless: false, 
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
         defaultViewport: null,
     });
@@ -104,5 +118,83 @@ async function scrappingDet(page, url) {
 
     return data;
 }
+async function scrappingPdf(page, url, browser, targetDate) {
+    try {
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
-export { initializeBrowser, fillExpTribunalA, scrappingDet };
+        const content = await page.content();
+        const $ = cheerio.load(content);
+
+        const rows = $('#ContentPlaceHolderPrincipal_dgDetalle_dgDetallado tr.tdatos');
+        
+        const initialFiles = new Set(fs.readdirSync(pdfDirectory));
+
+        for (let i = 0; i < rows.length; i++) {
+            const cells = $(rows[i]).find('td');
+            const fecha = $(cells[1]).find('span').text().trim();
+
+            const formattedFecha = formatDate(fecha);
+            const formattedTargetDate = formatDate(targetDate);
+
+            if (formattedFecha === formattedTargetDate) {
+                const pdfInputElement = $(rows[i]).find('input[type="image"]');
+                const pdfSrc = pdfInputElement.attr('src');
+
+                if (pdfInputElement.length > 0) {
+                    const [newPage] = await Promise.all([
+                        new Promise((resolve) => browser.once('targetcreated', target => resolve(target.page()))),
+                        page.click(`input[type="image"][src="${pdfSrc}"]`)
+                    ]);
+
+                    await newPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 });
+                    
+                    await setDownloadBehavior(newPage);
+                    await newPage.evaluate(() => {
+                        const downloadLink = document.querySelector('#download');
+                        if (downloadLink) {
+                            downloadLink.click();
+                        } else {
+                            throw new Error('No se encontró el enlace de descarga.');
+                        }
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    const finalFiles = new Set(fs.readdirSync(pdfDirectory));
+                    const newFiles = Array.from(finalFiles).filter(file => !initialFiles.has(file));
+                    
+                    if (newFiles.length > 0) {
+                        const pdfFile = newFiles[0]; 
+                        const pdfPath = path.join(pdfDirectory, pdfFile);
+                        return pdfPath;
+                    } else {
+                        throw new Error('El archivo PDF no fue descargado.');
+                    }
+                }
+            }
+        }
+
+        throw new Error('No se encontró ningún PDF para la fecha objetivo.');
+
+    } catch (error) {
+        console.error('Error durante el scraping del PDF:', error.message);
+        return null;
+    }
+}
+
+
+
+export { initializeBrowser, fillExpTribunalA, scrappingDet, scrappingPdf };
+
+
+
+async function setDownloadBehavior(page) {
+    const client = await page.target().createCDPSession();
+    await client.send('Page.setDownloadBehavior', {
+        behavior: 'allow',
+        downloadPath: pdfDirectory,
+    });
+}
+
+const formatDate = (dateString) => {
+    return dateString.trim().replace(/\./g, '').toLowerCase();
+};
