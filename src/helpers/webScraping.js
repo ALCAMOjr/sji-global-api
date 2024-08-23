@@ -21,7 +21,7 @@ if (!fs.existsSync(pdfDirectory)) {
 
 async function initializeBrowser() {
     const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
         defaultViewport: null,
     });
