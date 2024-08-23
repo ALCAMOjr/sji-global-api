@@ -5,8 +5,19 @@ import { initializeCoordinador } from './init.js'
 import { updateExpedientes } from './helpers/UpdateData.js';
 import cron from 'node-cron';
 import { checkAndCancelOverdueTasks } from './helpers/CancelTask.js'; 
+import { deleteAllFilesInDirectory } from './helpers/Pdfs.js';  // Importa la función
+import path from 'path';
 dotenv.config()
 
+
+const pdfDirectory = path.join(__dirname, 'pdfs');
+
+cron.schedule('0 * * * *', () => {
+    deleteAllFilesInDirectory(pdfDirectory);
+}, {
+    scheduled: true,
+    timezone: "America/Monterrey"
+});
 
 cron.schedule('0 20 * * *', async () => { 
     await updateExpedientes();  
