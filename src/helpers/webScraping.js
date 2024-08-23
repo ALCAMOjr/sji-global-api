@@ -11,8 +11,8 @@ const loginUrl = process.env.TRIBUNAL_URL;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const parentDir = path.dirname(__dirname); 
-const pdfDirectory = path.join(parentDir, 'pdfs'); 
+const parentDir = path.dirname(__dirname);
+const pdfDirectory = path.join(parentDir, 'pdfs');
 
 
 if (!fs.existsSync(pdfDirectory)) {
@@ -21,7 +21,7 @@ if (!fs.existsSync(pdfDirectory)) {
 
 async function initializeBrowser() {
     const browser = await puppeteer.launch({
-        headless: true, 
+        headless: false,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
         defaultViewport: null,
     });
@@ -58,7 +58,7 @@ async function fillExpTribunalA(page, url) {
     }
 
     try {
-        await page.waitForSelector('.show-hide-content.slidingDiv', { timeout: 90000 }); 
+        await page.waitForSelector('.show-hide-content.slidingDiv', { timeout: 90000 });
     } catch (error) {
         throw new Error('Error esperando al contenido expandido', error);
     }
@@ -104,16 +104,16 @@ async function scrappingDet(page, url) {
         const termino = $(cells[3]).text().trim();
         const notificacion = $(cells[4]).find('a').text().trim();
 
-            data.push({
-                verAcuerdo,
-                fecha,
-                etapa,
-                termino,
-                notificacion,
-            });
+        data.push({
+            verAcuerdo,
+            fecha,
+            etapa,
+            termino,
+            notificacion,
+        });
 
-    
-     
+
+
     }
 
     return data;
@@ -126,49 +126,45 @@ async function scrappingPdf(page, url, browser, targetDate) {
         const $ = cheerio.load(content);
 
         const rows = $('#ContentPlaceHolderPrincipal_dgDetalle_dgDetallado tr.tdatos');
-        
+
         const initialFiles = new Set(fs.readdirSync(pdfDirectory));
+
+        const formattedTargetDate = formatDate(targetDate);
 
         for (let i = 0; i < rows.length; i++) {
             const cells = $(rows[i]).find('td');
             const fecha = $(cells[1]).find('span').text().trim();
 
             const formattedFecha = formatDate(fecha);
-            const formattedTargetDate = formatDate(targetDate);
 
             if (formattedFecha === formattedTargetDate) {
-                const pdfInputElement = $(rows[i]).find('input[type="image"]');
-                const pdfSrc = pdfInputElement.attr('src');
-
-                if (pdfInputElement.length > 0) {
-                    const [newPage] = await Promise.all([
-                        new Promise((resolve) => browser.once('targetcreated', target => resolve(target.page()))),
-                        page.click(`input[type="image"][src="${pdfSrc}"]`)
-                    ]);
-
-                    await newPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 });
-                    
-                    await setDownloadBehavior(newPage);
-                    await newPage.evaluate(() => {
-                        const downloadLink = document.querySelector('#download');
-                        if (downloadLink) {
-                            downloadLink.click();
-                        } else {
-                            throw new Error('No se encontró el enlace de descarga.');
-                        }
-                    });
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-
-                    const finalFiles = new Set(fs.readdirSync(pdfDirectory));
-                    const newFiles = Array.from(finalFiles).filter(file => !initialFiles.has(file));
-                    
-                    if (newFiles.length > 0) {
-                        const pdfFile = newFiles[0]; 
-                        const pdfPath = path.join(pdfDirectory, pdfFile);
-                        return pdfPath;
+                const checkboxSelector = `#ContentPlaceHolderPrincipal_dgDetalle_dgDetallado_chkIns_${i}`;
+                await page.click(checkboxSelector);
+                const viewDocsButtonSelector = '#ContentPlaceHolderPrincipal_dgDetalle_btnVerDocumentos2';
+                const [newPage] = await Promise.all([
+                    new Promise((resolve) => browser.once('targetcreated', target => resolve(target.page()))),
+                    page.click(viewDocsButtonSelector)
+                ]);
+                await newPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 });
+                await setDownloadBehavior(newPage);
+                await newPage.evaluate(() => {
+                    const downloadLink = document.querySelector('#download');
+                    if (downloadLink) {
+                        downloadLink.click();
                     } else {
-                        throw new Error('El archivo PDF no fue descargado.');
+                        throw new Error('No se encontró el enlace de descarga.');
                     }
+                });
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                const finalFiles = new Set(fs.readdirSync(pdfDirectory));
+                const newFiles = Array.from(finalFiles).filter(file => !initialFiles.has(file));
+
+                if (newFiles.length > 0) {
+                    const pdfFile = newFiles[0];
+                    const pdfPath = path.join(pdfDirectory, pdfFile);
+                    return pdfPath;
+                } else {
+                    throw new Error('El archivo PDF no fue descargado.');
                 }
             }
         }

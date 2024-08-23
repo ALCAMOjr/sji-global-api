@@ -20,6 +20,7 @@ export const createExpediente = async (req, res) => {
     const { numero, nombre, url } = req.body;
     const { userId } = req;
 
+ 
     try {
         // Verificar el tipo de usuario
         const user = await AbogadoDAO.getById(userId);
@@ -40,6 +41,9 @@ export const createExpediente = async (req, res) => {
         let scrapedData = {};
         let scrapedDetails = [];
         let browser;
+        let page;
+   
+
 
         if (url) {
             try {
@@ -48,6 +52,7 @@ export const createExpediente = async (req, res) => {
                 scrapedData = await fillExpTribunalA(page, url);
                 scrapedDetails = await scrappingDet(page, url);
             } catch (scrapingError) {
+                console.log(scrapingError)
                 return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
             } finally {
                 if (browser) {
