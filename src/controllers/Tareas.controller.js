@@ -66,7 +66,6 @@ export const createTask = async (req, res) => {
     }
 };
 
-
 export const getTareasUser = async (req, res) => {
     try {
         const { userId } = req;
@@ -80,7 +79,7 @@ export const getTareasUser = async (req, res) => {
 
         const expedienteMap = {};
         for (const tarea of tareas) {
-            const { numero, nombre, url, expediente, tareaId, tarea: tareaDesc, fecha_entrega, observaciones, estado_tarea } = tarea;
+            const { numero, nombre, url, expediente, juzgado, tareaId, tarea: tareaDesc, fecha_entrega, observaciones, estado_tarea } = tarea;
 
             if (!expedienteMap[numero]) {
                 const details = await ExpedienteDetalleDAO.findByExpTribunalANumero(numero);
@@ -90,6 +89,7 @@ export const getTareasUser = async (req, res) => {
                     nombre, 
                     url, 
                     expediente, 
+                    juzgado, 
                     tareas: [], 
                     details 
                 };
@@ -106,6 +106,66 @@ export const getTareasUser = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while retrieving the tasks', details: error.message });
     }
 };
+
+export const getTareasUserByExpediente = async (req, res) => {
+    try {
+        const { userId } = req; 
+        const { exptribunalA_numero } = req.params;
+
+        const user = await AbogadoDAO.getById(userId);
+        if (!user) {
+            return res.status(403).send({ error: 'Unauthorized' });
+        }
+
+        const expediente = await ExpedienteDAO.findByNumero(exptribunalA_numero);
+        if (!expediente) {
+            return res.status(404).send({ error: 'Expediente not found' });
+        }
+
+        const tareas = await TareaDAO.findByExpedienteAndAbogado(exptribunalA_numero, userId);
+
+        const expedienteMap = {};
+        for (const tarea of tareas) {
+            const { numero, nombre, url, expediente, tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea, abogadoId, abogadoUsername } = tarea;
+
+            if (!expedienteMap[numero]) {
+                const details = await ExpedienteDetalleDAO.findByExpTribunalANumero(numero);
+
+                expedienteMap[numero] = {
+                    numero,
+                    nombre,
+                    url,
+                    expediente,
+                    tareas: [],
+                    details,
+                };
+            }
+            expedienteMap[numero].tareas.push({
+                tareaId,
+                tarea: tareaDesc,
+                fecha_inicio,
+                fecha_registro,
+                fecha_entrega,
+                fecha_real_entrega,
+                fecha_estimada_respuesta,
+                fecha_cancelacion,
+                observaciones,
+                estado_tarea,
+                abogadoId,
+                abogadoUsername,
+            });
+        }
+        const result = Object.values(expedienteMap);
+        res.status(200).send(result.length ? result : []);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({
+            error: 'An error occurred while retrieving the tasks for the specified expediente',
+            details: error.message,
+        });
+    }
+};
+
 
 export const startTask = async (req, res) => {
     try {

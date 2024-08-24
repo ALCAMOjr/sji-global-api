@@ -52,7 +52,7 @@ export const createExpediente = async (req, res) => {
                 scrapedData = await fillExpTribunalA(page, url);
                 scrapedDetails = await scrappingDet(page, url);
             } catch (scrapingError) {
-                console.log(scrapingError)
+                console.error(scrapingError)
                 return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
             } finally {
                 if (browser) {
@@ -149,7 +149,7 @@ export const updateExpediente = async (req, res) => {
         const { userId } = req;
 
         const user = await AbogadoDAO.getById(userId);
-        if (!user || user.user_type !== 'coordinador') {
+        if (!user) {
             return res.status(403).send({ error: 'Unauthorized' });
         }
 

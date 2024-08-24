@@ -64,14 +64,44 @@ class TareaDAO {
     static async findActiveTasksByAbogadoId(abogadoId) {
         const query = `
             SELECT Tareas.id as tareaId, Tareas.tarea, Tareas.fecha_entrega, Tareas.observaciones, 
-                    Tareas.estado_tarea, expTribunalA.numero, expTribunalA.nombre, expTribunalA.url, expTribunalA.expediente
-             FROM Tareas 
-             JOIN expTribunalA ON Tareas.exptribunalA_numero = expTribunalA.numero
-             WHERE Tareas.abogado_id = ? AND (Tareas.estado_tarea = 'Asignada' OR Tareas.estado_tarea = 'Iniciada')
+                   Tareas.estado_tarea, expTribunalA.numero, expTribunalA.nombre, expTribunalA.url, 
+                   expTribunalA.expediente, expTribunalA.juzgado
+            FROM Tareas 
+            JOIN expTribunalA ON Tareas.exptribunalA_numero = expTribunalA.numero
+            WHERE Tareas.abogado_id = ? AND (Tareas.estado_tarea = 'Asignada' OR Tareas.estado_tarea = 'Iniciada')
         `;
         const [rows] = await pool.query(query, [abogadoId]);
         return rows;
     }
+    
+    static async findByExpedienteAndAbogado(expTribunalANumero, abogadoId) {
+        const query = `
+            SELECT 
+                Tareas.id as tareaId, 
+                Tareas.tarea, 
+                Tareas.fecha_inicio, 
+                Tareas.fecha_registro, 
+                Tareas.fecha_entrega, 
+                Tareas.fecha_real_entrega, 
+                Tareas.fecha_estimada_respuesta, 
+                Tareas.fecha_cancelacion, 
+                Tareas.observaciones, 
+                Tareas.estado_tarea, 
+                expTribunalA.numero, 
+                expTribunalA.nombre, 
+                expTribunalA.url, 
+                expTribunalA.expediente,
+                abogados.id as abogadoId, 
+                abogados.username as abogadoUsername
+            FROM Tareas 
+            JOIN expTribunalA ON Tareas.exptribunalA_numero = expTribunalA.numero
+            JOIN abogados ON Tareas.abogado_id = abogados.id
+            WHERE Tareas.exptribunalA_numero = ? AND Tareas.abogado_id = ?
+        `;
+        const [rows] = await pool.query(query, [expTribunalANumero, abogadoId]);
+        return rows;
+    }
+    
 
 
     static async startTask(taskId, fecha_inicio) {

@@ -7,7 +7,12 @@ import cron from 'node-cron';
 import { checkAndCancelOverdueTasks } from './helpers/CancelTask.js'; 
 import { deleteAllFilesInDirectory } from './helpers/Pdfs.js';  // Importa la función
 import path from 'path';
+import { fileURLToPath } from 'url';
 dotenv.config()
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 const pdfDirectory = path.join(__dirname, 'pdfs');
