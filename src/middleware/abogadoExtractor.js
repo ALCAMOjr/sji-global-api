@@ -1,7 +1,7 @@
 import jsonwebtoken from 'jsonwebtoken'
 
 
- const abogadoExtractor = (req, res, next) => {
+const abogadoExtractor = (req, res, next) => {
 
     const authorizacion = req.get('authorization')
 
@@ -9,9 +9,10 @@ import jsonwebtoken from 'jsonwebtoken'
     let token = ''
     if (authorizacion && authorizacion.toLowerCase().startsWith('bearer')) {
         token = authorizacion.substring(7)
-       
-      
+
+
     }
+
 
     let decodedToken;
     try {
@@ -27,6 +28,7 @@ import jsonwebtoken from 'jsonwebtoken'
     }
 
     const { id: userId } = decodedToken.userForToken
+
 
     req.userId = userId;
 
