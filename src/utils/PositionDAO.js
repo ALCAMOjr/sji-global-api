@@ -12,7 +12,6 @@ class PositionDao {
                 macroetapa_aprobada
             FROM CreditosSIAL
         ),
-        
         ExpTribunalEtapas AS (
             SELECT 
                 etd.expTribunalA_numero,
@@ -74,7 +73,6 @@ class PositionDao {
             FROM expTribunalDetA etd
             LEFT JOIN EtapasTv etv ON etd.etapa = etv.etapa AND etd.termino = etv.termino
         ),
-        
         Coincidentes AS (
             SELECT 
                 ce.num_credito,
@@ -85,12 +83,14 @@ class PositionDao {
                 ete.fecha_original AS fecha,  -- Mantener la fecha original
                 ete.etapa,
                 ete.termino,
-                ete.notificacion
+                ete.notificacion,
+                eta.nombre, 
+                eta.url   
             FROM CreditosEtapas ce
             JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
+            JOIN expTribunalA eta ON ete.expTribunalA_numero = eta.numero
             WHERE ete.row_num = 1
         ),
-        
         NoCoincidentes AS (
             SELECT 
                 c.num_credito,
@@ -101,7 +101,9 @@ class PositionDao {
                 NULL AS fecha,
                 NULL AS etapa,
                 NULL AS termino,
-                NULL AS notificacion
+                NULL AS notificacion,
+                NULL AS nombre, -- Dejar NULL si no hay coincidencia
+                NULL AS url     -- Dejar NULL si no hay coincidencia
             FROM CreditosSIAL c
             LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
             WHERE etd.expTribunalA_numero IS NULL
@@ -117,7 +119,9 @@ class PositionDao {
             fecha,  -- Fecha original en formato español
             etapa,
             termino,
-            notificacion
+            notificacion,
+            nombre, -- Incluir nombre en la selección final
+            url     -- Incluir url en la selección final
         FROM Coincidentes
         
         UNION ALL
@@ -131,8 +135,10 @@ class PositionDao {
             fecha,
             etapa,
             termino,
-            notificacion
-        FROM NoCoincidentes;        
+            notificacion,
+            nombre, -- Incluir nombre en la selección final (NULL en este caso)
+            url     -- Incluir url en la selección final (NULL en este caso)
+        FROM NoCoincidentes;            
         `);
         return results;
     }
@@ -227,9 +233,12 @@ class PositionDao {
                 ete.fecha_original AS fecha,  -- Mantener la fecha original
                 ete.etapa,
                 ete.termino,
-                ete.notificacion
+                ete.notificacion,
+                eta.nombre, -- Obtener el campo nombre
+                eta.url    -- Obtener el campo url
             FROM CreditosEtapas ce
             JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
+            JOIN expTribunalA eta ON ete.expTribunalA_numero = eta.numero
             WHERE ete.row_num = 1
         ),
         
@@ -244,7 +253,9 @@ class PositionDao {
                 NULL AS fecha,
                 NULL AS etapa,
                 NULL AS termino,
-                NULL AS notificacion
+                NULL AS notificacion,
+                NULL AS nombre,
+                NULL AS url    
             FROM CreditosSIAL c
             LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
             WHERE etd.expTribunalA_numero IS NULL
@@ -261,7 +272,9 @@ class PositionDao {
             fecha,  -- Fecha original en formato español
             etapa,
             termino,
-            notificacion
+            notificacion,
+            nombre, 
+            url     
         FROM Coincidentes
         
         UNION ALL
@@ -275,8 +288,10 @@ class PositionDao {
             fecha,
             etapa,
             termino,
-            notificacion
-        FROM NoCoincidentes;
+            notificacion,
+            nombre,
+            url     
+        FROM NoCoincidentes;   
         `, [number, number, number]);
         
         return results;
@@ -366,9 +381,12 @@ static async getAllByMacroetapa(macroetapa) {
             ete.fecha_original AS fecha,  -- Mantener la fecha original
             ete.etapa,
             ete.termino,
-            ete.notificacion
+            ete.notificacion,
+            eta.nombre, 
+            eta.url   
         FROM CreditosEtapas ce
         JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
+        JOIN expTribunalA eta ON ete.expTribunalA_numero = eta.numero
         WHERE ete.row_num = 1
     ),
     
@@ -382,7 +400,9 @@ static async getAllByMacroetapa(macroetapa) {
             NULL AS fecha,
             NULL AS etapa,
             NULL AS termino,
-            NULL AS notificacion
+            NULL AS notificacion,
+            NULL AS nombre,
+            NULL AS url    
         FROM CreditosSIAL c
         LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
         WHERE etd.expTribunalA_numero IS NULL
@@ -399,7 +419,9 @@ static async getAllByMacroetapa(macroetapa) {
         fecha,  -- Fecha original en formato español
         etapa,
         termino,
-        notificacion
+        notificacion,
+        nombre, 
+        url     
     FROM Coincidentes
     
     UNION ALL
@@ -413,8 +435,10 @@ static async getAllByMacroetapa(macroetapa) {
         fecha,
         etapa,
         termino,
-        notificacion
-    FROM NoCoincidentes;
+        notificacion,
+        nombre,
+        url     
+    FROM NoCoincidentes;  
     
     `, [macroetapa, macroetapa]);
     
@@ -503,9 +527,12 @@ static async getAllByEtapa(etapa, termino, notificacion) {
             ete.fecha_original AS fecha,  
             ete.etapa,
             ete.termino,
-            ete.notificacion
+            ete.notificacion,
+            eta.nombre, 
+            eta.url   
         FROM CreditosEtapas ce
         JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
+        JOIN expTribunalA eta ON ete.expTribunalA_numero = eta.numero
         WHERE ete.row_num = 1
     ),
     
@@ -519,10 +546,12 @@ static async getAllByEtapa(etapa, termino, notificacion) {
             NULL AS fecha,
             NULL AS etapa,
             NULL AS termino,
-            NULL AS notificacion
+            NULL AS notificacion,
+            NULL AS nombre,
+            NULL AS url    
         FROM CreditosSIAL c
         LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
-        WHERE etd.expTribunalA_numero IS NULL 
+        WHERE etd.expTribunalA_numero IS NULL
         AND etd.etapa = ? 
         AND etd.termino = ? 
         AND etd.notificacion = ?
@@ -537,9 +566,11 @@ static async getAllByEtapa(etapa, termino, notificacion) {
         fecha,  
         etapa,
         termino,
-        notificacion
+        notificacion,
+        nombre, 
+        url     
     FROM Coincidentes
-    
+
     UNION ALL
     
     SELECT 
@@ -551,8 +582,10 @@ static async getAllByEtapa(etapa, termino, notificacion) {
         fecha,
         etapa,
         termino,
-        notificacion
-    FROM NoCoincidentes;
+        notificacion,
+        nombre,
+        url     
+    FROM NoCoincidentes; 
     
     `, [etapa, termino, notificacion, etapa, termino, notificacion]);
     
