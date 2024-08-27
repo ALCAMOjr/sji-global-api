@@ -137,7 +137,7 @@ export const deleteAbogado = async (req, res) => {
             return res.status(403).send({ error: 'Unauthorized' });
         }
 
-        await TareaDAO.updateAbogadoId(id);
+        await TareaDAO.deleteTasksByAbogadoId(id);
 
         const pendingTasks = await TareaDAO.findActiveTasksByAbogadoId(id);
         if (pendingTasks.length > 0) {
