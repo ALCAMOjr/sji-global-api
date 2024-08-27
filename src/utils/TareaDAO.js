@@ -176,11 +176,11 @@ class TareaDAO {
         return rows.length > 0;
     }
 
-    static async updateAbogadoId(abogadoId) {
-        const query = 'UPDATE Tareas SET abogado_id = NULL WHERE abogado_id = ? AND estado_tarea IN ("Terminada", "Cancelada")';
+    static async deleteTasksByAbogadoId(abogadoId) {
+        const query = 'DELETE FROM Tareas WHERE abogado_id = ? AND estado_tarea IN ("Terminada", "Cancelada")';
         await pool.query(query, [abogadoId]);
-       
     }
+    
     
 }
 
