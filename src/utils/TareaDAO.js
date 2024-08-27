@@ -178,8 +178,8 @@ class TareaDAO {
 
     static async updateAbogadoId(abogadoId) {
         const query = 'UPDATE Tareas SET abogado_id = NULL WHERE abogado_id = ? AND estado_tarea IN ("Terminada", "Cancelada")';
-        const [result] = await pool.query(query, [abogadoId]);
-        console.log(result.affectedRows); 
+        await pool.query(query, [abogadoId]);
+       
     }
     
 }
