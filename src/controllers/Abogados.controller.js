@@ -127,22 +127,23 @@ export const updateAbogado = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while updating the abogado' });
     }
 };
-
 export const deleteAbogado = async (req, res) => {
     try {
         const { id } = req.params;
         const { userId } = req;
         const user = await AbogadoDAO.getById(userId);
+
         if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
-        }
-        const pendingTasks = await TareaDAO.findActiveTasksByAbogadoId(id);
-        if (pendingTasks.length > 0) {
-            return res.status(400).send({ error: 'Cannot delete abogado with pending tasks' });
         }
 
         await TareaDAO.updateAbogadoId(id);
 
+        const pendingTasks = await TareaDAO.findActiveTasksByAbogadoId(id);
+        if (pendingTasks.length > 0) {
+            return res.status(400).send({ error: 'Cannot delete abogado with active tasks' });
+        }
+        
         const affectedRows = await AbogadoDAO.delete(id);
         if (affectedRows <= 0) {
             return res.status(404).json({ message: 'Abogado not found' });
@@ -154,6 +155,7 @@ export const deleteAbogado = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while deleting the abogado' });
     }
 };
+
 
 export const verify = async (req, res) => {
     const token = req.body.token;

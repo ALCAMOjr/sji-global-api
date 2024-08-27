@@ -199,6 +199,7 @@ export const updateExpediente = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while updating the expediente' });
     }
 };
+
 export const updateExpedientes = async (req, res) => {
     let browser;
     let page;
