@@ -21,7 +21,7 @@ if (!fs.existsSync(pdfDirectory)) {
 
 async function initializeBrowser() {
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
         defaultViewport: null,
     });
@@ -41,7 +41,7 @@ async function fillExpTribunalA(page, url) {
     let attempts = 0;
     while (!navigated && attempts < 3) {
         try {
-            await page.goto(url, { waitUntil: 'networkidle2', timeout: 90000 });
+            await page.goto(url, { waitUntil: 'networkidle2', timeout: 10000 });
             navigated = true;
         } catch (error) {
             attempts++;
@@ -80,7 +80,7 @@ async function scrappingDet(page, url) {
     let navigated = false;
     while (!navigated && attempts < 3) {
         try {
-            await page.goto(url, { waitUntil: 'networkidle2', timeout: 90000 });
+            await page.goto(url, { waitUntil: 'networkidle2', timeout: 10000 });
             navigated = true;
         } catch (error) {
             attempts++;

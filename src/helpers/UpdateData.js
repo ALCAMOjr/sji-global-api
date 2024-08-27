@@ -3,10 +3,11 @@ import ExpedienteDAO from '../utils/ExpedienteDAO.js';
 import Expediente from '../models/Expediente.js';
 import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
 import ExpedienteDetalle from '../models/ExpedienteDet.js';
+
 export const updateExpedientes = async () => {
     let browser;
     let page;
-    
+
     try {
         const expedientes = await ExpedienteDAO.findAll();
 
@@ -29,19 +30,19 @@ export const updateExpedientes = async () => {
                         }
                     }
                 } catch (scrapingError) {
-                    console.error(`Error durante el scraping para el expediente número ${numero}:`, scrapingError);
+                    console.error(`Error durante el scraping para el expediente número ${numero}:`, scrapingError.message);
                 } finally {
                     if (browser) {
                         try {
                             await browser.close();
                         } catch (closeError) {
-                            console.error('Error cerrando el navegador:', closeError);
+                            console.error('Error cerrando el navegador:', closeError.message);
                         }
                     }
                 }
             }
         }
     } catch (error) {
-        console.error('Ocurrió un error actualizando los expedientes:', error);
+        console.error('Ocurrió un error actualizando los expedientes:', error.message);
     }
 };
