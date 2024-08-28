@@ -62,7 +62,7 @@ export const uploadAndConvertCsv = async (req, res) => {
       } else {
         const currentHeaders = Object.keys(jsonArray[0]);
         if (currentHeaders.length !== baseHeaders.length || !currentHeaders.every((header, index) => header === baseHeaders[index])) {
-          return res.status(400).json({ message: 'Los archivos no tienen los mismos campos.' });
+          return res.status(400).json({ message: 'All CSV files must have the same fields.' });
         }
       }
 
@@ -84,6 +84,7 @@ export const uploadAndConvertCsv = async (req, res) => {
     res.status(500).json({ message: 'Error converting CSV to JSON', error });
   }
 };
+
 
 export const getAllCreditsSial = async (req, res) => {
   try {

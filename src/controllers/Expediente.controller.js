@@ -3,12 +3,15 @@ import AbogadoDAO from '../utils/AbogadoDAO.js';
 import Expediente from '../models/Expediente.js';
 import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
 import ExpedienteDetalle from '../models/ExpedienteDet.js';
+import CreditoSialDAO from '../utils/CreditosSialDAO.js';
 import { initializeBrowser, fillExpTribunalA, scrappingDet, scrappingPdf } from '../helpers/webScraping.js';
 import path from "path"
 import TareaDAO from '../utils/TareaDAO.js';
 import fs from 'fs';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
+import csv from 'csvtojson';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -366,3 +369,82 @@ export const getFilename = async (req, res) => {
     }
 };
 
+export const uploadCsvExpediente = async (req, res) => {
+    try {
+        const { userId } = req;
+        const files = req.files;
+
+        if (!files || files.length === 0) {
+            return res.status(400).json({ message: 'No files uploaded' });
+        }
+
+        const fileExtension = files[0].originalname.split('.').pop().toLowerCase();
+        if (fileExtension !== 'csv') {
+            return res.status(400).json({ message: 'Invalid file format. Only CSV files are allowed.' });
+        }
+
+        const user = await AbogadoDAO.getById(userId);
+        if (!user || user.user_type !== 'coordinador') {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        let isFirstFile = true;
+        let baseHeaders = [];
+
+        for (const file of files) {
+            const csvBuffer = file.buffer.toString('utf-8');
+            const jsonArray = await csv().fromString(csvBuffer);
+
+            if (isFirstFile) {
+                baseHeaders = Object.keys(jsonArray[0]);
+                if (baseHeaders.length !== 2 || !baseHeaders.includes('Expediente') || !baseHeaders.includes('Url')) {
+                    return res.status(400).json({ message: 'The CSV files must contain only "Expediente" and "Url" fields.' });
+                }
+                isFirstFile = false;
+            } else {
+                const currentHeaders = Object.keys(jsonArray[0]);
+                if (currentHeaders.length !== baseHeaders.length || !currentHeaders.every((header, index) => header === baseHeaders[index])) {
+                    return res.status(400).json({ message: 'All CSV files must have the same fields.' });
+                }
+            }
+
+            for (const row of jsonArray) {
+                const expediente = row['Expediente'];
+                const url = row['Url'];
+
+                const existingEntries = await ExpedienteDAO.findByNumero(expediente);
+
+                const acreditadoData = await CreditoSialDAO.getAcreditadoByNumCredito(expediente);
+                const acreditado = acreditadoData.length > 0 ? acreditadoData[0].acreditado : null;
+
+                if (existingEntries.length > 0) {
+                    const existingEntry = existingEntries[0];
+                    const updatedEntry = {
+                        ...existingEntry,
+                        url,
+                        nombre: acreditado || existingEntry.nombre,
+                    };
+                    await ExpedienteDAO.update(updatedEntry);
+                } else {
+                    const newEntry = {
+                        numero: expediente,
+                        nombre: acreditado,
+                        url,
+                        expediente: null,
+                        juzgado: null,
+                        juicio: null,
+                        ubicacion: null,
+                        partes: null,
+                    };
+                    await ExpedienteDAO.create(newEntry);
+                }
+            }
+        }
+
+        const rows = await ExpedienteDAO.findAll();
+        res.status(200).json({ message: 'The CSV files have been processed and the data has been inserted/updated successfully', data: rows });
+    } catch (error) {
+        console.error('Error processing CSV files:', error);
+        res.status(500).json({ message: 'Error processing CSV files', error });
+    }
+};
