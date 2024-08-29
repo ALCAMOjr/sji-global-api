@@ -210,7 +210,7 @@ describe('Abogados API', () => {
     });
 
     describe('Delete', () => {
-        test('Delete abogado successfully', async () => {
+        test('Delete abogado successfully!', async () => {
             await api
                 .delete(`/api/abogados/${abogadoId}`) 
                 .set('Authorization', `Bearer ${tokenCoordinador}`)
