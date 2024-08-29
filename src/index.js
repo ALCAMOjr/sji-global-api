@@ -7,7 +7,7 @@ import { checkAndCancelOverdueTasks } from './helpers/CancelTask.js';
 import { deleteAllFilesInDirectory } from './helpers/Pdfs.js';  
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { cleanJobs } from './helpers/expedienteWorker.js';
+import { cleanJobs, clearWorkspace } from './helpers/expedienteWorker.js';
 dotenv.config()
 
 
@@ -17,8 +17,8 @@ const __dirname = path.dirname(__filename);
 
 const pdfDirectory = path.join(__dirname, 'pdfs');
 
-await cleanJobs(['failed', 'completed', 'waiting', 'active', 'delayed', 'failed', 'paused']);
 
+await clearWorkspace()
 
 cron.schedule('0 */12 * * *', async () => {
     await cleanJobs(['failed', 'completed']);

@@ -86,14 +86,24 @@ expedienteQueue.process(async (job) => {
 });
 
 
-export const cleanJobs = async (states) => {
+export const clearWorkspace = async () => {
     try {
-        const jobs = await expedienteQueue.getJobs(states);
-        for (const job of jobs) {
-            await job.remove();
+
+        await expedienteQueue.empty(); 
+        await expedienteQueue.clean(0, 'completed'); 
+        await expedienteQueue.clean(0, 'failed');
+        await expedienteQueue.clean(0, 'delayed'); 
+        await expedienteQueue.clean(0, 'wait');
+        await expedienteQueue.clean(0, 'active'); 
+        await expedienteQueue.clean(0, 'paused'); 
+        const repeatableJobs = await expedienteQueue.getRepeatableJobs();
+        for (const job of repeatableJobs) {
+            await expedienteQueue.removeRepeatableByKey(job.key);
         }
+
+        console.log('Workspace has been successfully cleared.');
     } catch (error) {
-        console.error(`Error cleaning jobs in states ${states}:`, error);
+        console.error('Error clearing workspace:', error);
     }
 };
 
