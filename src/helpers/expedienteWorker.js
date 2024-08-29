@@ -8,9 +8,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-let expedienteQueue;
-try {
-     expedienteQueue = new Queue('expedienteQueue', {
+
+
+    const expedienteQueue = new Queue('expedienteQueue', {
         redis: {
             host: process.env.REDIS_HOST,
             port: process.env.REDIS_PORT,
@@ -22,9 +22,7 @@ try {
         }
     });
 
-} catch (error) {
-    console.error('Error connecting to Redis:', error);
-}
+
 
 
 expedienteQueue.process(async (job) => {

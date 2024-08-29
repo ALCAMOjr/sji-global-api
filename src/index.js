@@ -17,6 +17,12 @@ const __dirname = path.dirname(__filename);
 
 const pdfDirectory = path.join(__dirname, 'pdfs');
 
+await cleanJobs(['completed',
+  'waiting',
+  'active',
+  'delayed',
+  'failed',
+  'paused']);
 
 cron.schedule('0 */12 * * *', async () => {
     await cleanJobs(['failed', 'completed']);
