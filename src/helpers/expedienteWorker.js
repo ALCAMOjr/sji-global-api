@@ -8,9 +8,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-
-console.log(process.env.REDIS_HOST,  process.env.REDIS_PORT, process.env.REDIS_PASS, process.env.REDIS_USER)
-
 let expedienteQueue;
 try {
      expedienteQueue = new Queue('expedienteQueue', {
