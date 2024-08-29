@@ -11,19 +11,19 @@ import fs from 'fs';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import csv from 'csvtojson';
-
+import expedienteQueue from '..//helpers/expedienteWorker.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const projectRoot = path.resolve(__dirname, '../');
-const pdfDirectory = path.join(projectRoot, 'pdfs'); 
+const pdfDirectory = path.join(projectRoot, 'pdfs');
 
 export const createExpediente = async (req, res) => {
     const { numero, nombre, url } = req.body;
     const { userId } = req;
 
- 
+
     try {
         // Verificar el tipo de usuario
         const user = await AbogadoDAO.getById(userId);
@@ -45,7 +45,7 @@ export const createExpediente = async (req, res) => {
         let scrapedDetails = [];
         let browser;
         let page;
-   
+
 
 
         if (url) {
@@ -203,78 +203,12 @@ export const updateExpediente = async (req, res) => {
     }
 };
 
-export const updateExpedientes = async (req, res) => {
-    let browser;
-    let page;
-    const { userId } = req;
-    let expedientesConDetalles = [];  
-    try {
-        const user = await AbogadoDAO.getById(userId);
-        if (!user || user.user_type !== 'coordinador') {
-            return res.status(403).send({ error: 'Unauthorized' });
-        }
-
-        const expedientes = await ExpedienteDAO.findAll();
-
-        for (const expediente of expedientes) {
-            const { numero, url } = expediente;
-            if (url) {
-                try {
-                    ({ browser, page } = await initializeBrowser());
-
-                    const scrapedData = await fillExpTribunalA(page, url);
-                    const { juzgado = '', juicio = '', ubicacion = '', partes = '', expediente: scrapedExpediente = '' } = scrapedData;
-
-                    await ExpedienteDAO.update(new Expediente(numero, expediente.nombre, url, scrapedExpediente, juzgado, juicio, ubicacion, partes));
-                    await ExpedienteDetalleDAO.deleteByExpTribunalANumero(numero);
-
-                    const scrapedDetails = await scrappingDet(page, url);
-                    if (scrapedDetails.length > 0) {
-                        for (const detail of scrapedDetails) {
-                            const expedienteDetalle = new ExpedienteDetalle(null, detail.verAcuerdo, detail.fecha, detail.etapa, detail.termino, detail.notificacion, scrapedExpediente, numero);
-                            await ExpedienteDetalleDAO.create(expedienteDetalle);
-                        }
-                    }
-
-                } catch (scrapingError) {
-                    console.error(`Error during scraping for expediente number ${numero}:`, scrapingError);
-                } finally {
-                    if (browser) {
-                        try {
-                            await browser.close();
-                        } catch (closeError) {
-                            console.error('Error closing browser:', closeError);
-                        }
-                    }
-                }
-            }
-        }
-
-        const updatedExpedientes = await ExpedienteDAO.findAll();
-
-        for (const expediente of updatedExpedientes) {
-            const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(expediente.numero);
-            expedientesConDetalles.push({
-                ...expediente,
-                detalles
-            });
-        }
-
-        res.status(200).send(expedientesConDetalles);
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).send({ error: 'An error occurred while updating expedientes' });
-    }
-};
-
-
 export const deleteExpediente = async (req, res) => {
     try {
         const { numero } = req.params;
         const { userId } = req;
 
-    
+
         const user = await AbogadoDAO.getById(userId);
         if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
@@ -303,7 +237,7 @@ export const deleteExpediente = async (req, res) => {
         console.error(error);
         res.status(500).send({ error: 'An error occurred while deleting the expediente' });
     }
-}; 
+};
 
 export const getPdf = async (req, res) => {
     const { userId } = req;
@@ -359,7 +293,7 @@ export const getFilename = async (req, res) => {
         return res.status(403).send({ error: 'Unauthorized' });
     }
 
-    const sanitizedFilename = path.basename(filename); 
+    const sanitizedFilename = path.basename(filename);
     const filePath = path.join(pdfDirectory, sanitizedFilename);
 
     if (fs.existsSync(filePath)) {
@@ -446,5 +380,49 @@ export const uploadCsvExpediente = async (req, res) => {
     } catch (error) {
         console.error('Error processing CSV files:', error);
         res.status(500).json({ message: 'Error processing CSV files', error });
+    }
+};
+
+
+export const startUpdateExpedientes = async (req, res) => {
+    const { userId } = req;
+    const user = await AbogadoDAO.getById(userId);
+    if (!user || user.user_type !== 'coordinador') {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+    try {
+        const job = await expedienteQueue.add();
+        res.status(202).send({ jobId: job.id, message: 'Expediente update process started' });
+    } catch (error) {
+        console.error('Error starting expediente update process:', error);
+        res.status(500).send({ error: 'An error occurred while starting the expediente update process' });
+    }
+};
+
+export const getJobStatus = async (req, res) => {
+    const { jobId } = req.params;
+    const { userId } = req;
+    const user = await AbogadoDAO.getById(userId);
+    if (!user || user.user_type !== 'coordinador') {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+    try {
+        const job = await expedienteQueue.getJob(jobId);
+
+        if (!job) {
+            return res.status(404).send({ error: 'Job not found' });
+        }
+
+        const state = await job.getState();
+        const progress = job.progress()
+
+        let result = null;
+        if (state === 'completed') {
+            result = job.returnvalue; 
+        }
+        res.send({ state, progress, result });
+    } catch (error) {
+        console.error('Error retrieving job status:', error);
+        res.status(500).send({ error: 'An error occurred while retrieving job status' });
     }
 };

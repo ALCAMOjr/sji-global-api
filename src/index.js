@@ -1,13 +1,13 @@
 import dotenv from 'dotenv'
 import { app } from "./app.js"
 import { initializeCoordinador } from './init.js'
-// import { UploadFileasync, uploadCSVToEtapasTv } from './helpers/UploadData.js'
 import { updateExpedientes } from './helpers/UpdateData.js';
 import cron from 'node-cron';
-import { checkAndCancelOverdueTasks } from './helpers/CancelTask.js'; 
-import { deleteAllFilesInDirectory } from './helpers/Pdfs.js';  // Importa la función
+import { checkAndCancelOverdueTasks } from './helpers/CancelTask.js';
+import { deleteAllFilesInDirectory } from './helpers/Pdfs.js';  
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { cleanJobs } from './helpers/expedienteWorker.js';
 dotenv.config()
 
 
@@ -16,6 +16,15 @@ const __dirname = path.dirname(__filename);
 
 
 const pdfDirectory = path.join(__dirname, 'pdfs');
+
+
+cron.schedule('0 */12 * * *', async () => {
+    await cleanJobs(['failed', 'completed']);
+
+}, {
+    scheduled: true,
+    timezone: "America/Monterrey"
+}); 
 
 cron.schedule('0 * * * *', () => {
     deleteAllFilesInDirectory(pdfDirectory);
@@ -50,10 +59,6 @@ app.use((req, res, next) => {
 if (process.env.NODE_ENV !== 'test') {
     initializeCoordinador();
 }
-
-// ESta funcion se ejecutara cuando se necesite subir data de forma manual. Debe ser un archivo CSV.
-// UploadFileasync()
-// uploadCSVToEtapasTv()
 
 const PORT = process.env.PORT || 3001
 
