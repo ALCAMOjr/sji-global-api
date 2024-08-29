@@ -86,6 +86,18 @@ expedienteQueue.process(async (job) => {
 });
 
 
+export const cleanJobs = async (states) => {
+    try {
+        const jobs = await expedienteQueue.getJobs(states);
+        for (const job of jobs) {
+            await job.remove();
+        }
+    } catch (error) {
+        console.error(`Error cleaning jobs in states ${states}:`, error);
+    }
+};
+
+
 export const clearWorkspace = async () => {
     try {
 
@@ -106,5 +118,6 @@ export const clearWorkspace = async () => {
         console.error('Error clearing workspace:', error);
     }
 };
+
 
 export default expedienteQueue;
