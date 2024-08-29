@@ -34,7 +34,9 @@ expedienteQueue.process(async (job) => {
 
     try {
         const expedientes = await ExpedienteDAO.findAll();
+        console.log("Obteniendo Expedientes")
         for (const expediente of expedientes) {
+            console.log("Iterando Expedientes")
             const { numero, url } = expediente;
             if (url) {
                 try {
@@ -46,6 +48,7 @@ expedienteQueue.process(async (job) => {
                     await ExpedienteDetalleDAO.deleteByExpTribunalANumero(numero);
 
                     const scrapedDetails = await scrappingDet(page, url);
+                    console.log("Scrapeando Expedientes")
                     if (scrapedDetails.length > 0) {
                         for (const detail of scrapedDetails) {
                             const expedienteDetalle = new ExpedienteDetalle(null, detail.verAcuerdo, detail.fecha, detail.etapa, detail.termino, detail.notificacion, scrapedExpediente, numero);
@@ -58,8 +61,9 @@ expedienteQueue.process(async (job) => {
                 }
                 processedCount++;
                 
-                
+                console.log("Count de Progreso en iteracion", processedCount)
                 const progress = Math.round((processedCount / expedientes.length) * 100);
+                console.log("Progreso en iteracion", progress)
                 job.progress(progress);
             }
         }
@@ -72,6 +76,8 @@ expedienteQueue.process(async (job) => {
                 detalles
             });
         }
+          console.log("Devolviendo Expedientes")
+                  
 
         return expedientesConDetalles;
 

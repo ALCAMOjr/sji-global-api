@@ -416,7 +416,7 @@ export const getJobStatus = async (req, res) => {
         const state = await job.getState();
         const progress = job.progress()
 
-        console.log(progress)
+        console.log("Progreso en controlador", progress)
 
         let result = null;
         if (state === 'completed') {
