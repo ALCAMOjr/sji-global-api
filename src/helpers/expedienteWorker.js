@@ -11,18 +11,23 @@ dotenv.config();
 
 console.log(process.env.REDIS_HOST,  process.env.REDIS_PORT, process.env.REDIS_PASS, process.env.REDIS_USER)
 
+let expedienteQueue;
+try {
+     expedienteQueue = new Queue('expedienteQueue', {
+        redis: {
+            host: process.env.REDIS_HOST,
+            port: process.env.REDIS_PORT,
+            password: process.env.REDIS_PASS,
+            username: process.env.REDIS_USER,
+            db: 0,
+            connectTimeout: 10000,
+            
+        }
+    });
 
-const expedienteQueue = new Queue('expedienteQueue', {
-    redis: {
-        host: process.env.REDIS_HOST, 
-        port: process.env.REDIS_PORT, 
-        password: process.env.REDIS_PASS, 
-        username: process.env.REDIS_USER, 
-        db: 0,
-        connectTimeout: 10000,
-    }
-});
-
+} catch (error) {
+    console.error('Error connecting to Redis:', error);
+}
 
 
 expedienteQueue.process(async (job) => {
