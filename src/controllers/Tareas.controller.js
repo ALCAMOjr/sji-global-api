@@ -264,10 +264,6 @@ export const getTareasByAbogado = async (req, res) => {
         if (!user) {
             return res.status(400).send({ error: 'Invalid user id' });
         }
-        if (user.user_type !== 'coordinador') {
-            return res.status(403).send({ error: 'Unauthorized' });
-        }
-
         const abogado = await AbogadoDAO.getByUsername(abogado_username);
         if (!abogado || abogado.user_type !== 'abogado') {
             return res.status(200).send({ error: 'Abogado not found' });
@@ -277,17 +273,15 @@ export const getTareasByAbogado = async (req, res) => {
 
         const expedienteMap = {};
         tareas.forEach(tarea => {
-            const { numero, nombre, url, expediente, tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea } = tarea;
+            const { numero, nombre, url, expediente, tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea, abogadoId, abogadoUsername } = tarea;
             if (!expedienteMap[numero]) {
-                expedienteMap[numero] = { numero, nombre, url, expediente, tareas: [] };
+                expedienteMap[numero] = { numero, nombre, url, expediente, tareas: [], abogadoId, abogadoUsername };
             }
             expedienteMap[numero].tareas.push({ tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea });
         });
 
         const result = Object.values(expedienteMap);
 
-
-        
         res.status(200).send(result);
     } catch (error) {
         console.error(error);
