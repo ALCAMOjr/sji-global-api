@@ -57,6 +57,8 @@ expedienteQueue.process(5, async (job) => {
                 processedCount++;
                 
                 const progress = Math.round((processedCount / expedientes.length) * 100);
+
+                console.log("Progeso en iteracion", progress)
                 job.progress(progress);
             }
         }
