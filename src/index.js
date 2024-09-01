@@ -27,10 +27,7 @@ if (process.env.NODE_ENV === 'production') {
         scheduled: true,
         timezone: "America/Monterrey"
     });
-} else {
-    console.log('No se limpia el espacio de trabajo!');
-}
-
+} 
 cron.schedule('0 * * * *', () => {
     deleteAllFilesInDirectory(pdfDirectory);
 }, {

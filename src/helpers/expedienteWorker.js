@@ -39,7 +39,6 @@ dotenv.config();
                         ({ browser, page } = await initializeBrowser());
                         
                         try {
-                            // Intentamos hacer el scraping
                             const scrapedData = await fillExpTribunalA(page, url);
                             const { juzgado = '', juicio = '', ubicacion = '', partes = '', expediente: scrapedExpediente = '' } = scrapedData;
     
@@ -63,7 +62,6 @@ dotenv.config();
                         
                         processedCount++;
                         const progress = Math.round((processedCount / expedientes.length) * 100);
-                        console.log("Progreso en iteración", progress);
                         job.progress(progress);
                         
                     } catch (error) {
