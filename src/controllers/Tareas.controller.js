@@ -275,9 +275,9 @@ export const getTareasByAbogado = async (req, res) => {
         tareas.forEach(tarea => {
             const { numero, nombre, url, expediente, tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea, abogadoId, abogadoUsername } = tarea;
             if (!expedienteMap[numero]) {
-                expedienteMap[numero] = { numero, nombre, url, expediente, tareas: [], abogadoId, abogadoUsername };
+                expedienteMap[numero] = { numero, nombre, url, expediente, tareas: [] };
             }
-            expedienteMap[numero].tareas.push({ tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea });
+            expedienteMap[numero].tareas.push({ tareaId, tarea: tareaDesc, fecha_inicio, fecha_registro, fecha_entrega, fecha_real_entrega, fecha_estimada_respuesta, fecha_cancelacion, observaciones, estado_tarea, abogadoId, abogadoUsername});
         });
 
         const result = Object.values(expedienteMap);

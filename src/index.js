@@ -18,15 +18,18 @@ const __dirname = path.dirname(__filename);
 const pdfDirectory = path.join(__dirname, 'pdfs');
 
 
-await clearWorkspace()
+if (process.env.NODE_ENV === 'production') {
+    await clearWorkspace();
 
-cron.schedule('0 */12 * * *', async () => {
-    await cleanJobs(['failed', 'completed']);
-
-}, {
-    scheduled: true,
-    timezone: "America/Monterrey"
-}); 
+    cron.schedule('0 */12 * * *', async () => {
+        await cleanJobs(['failed', 'completed']);
+    }, {
+        scheduled: true,
+        timezone: "America/Monterrey"
+    });
+} else {
+    console.log('No se limpia el espacio de trabajo!');
+}
 
 cron.schedule('0 * * * *', () => {
     deleteAllFilesInDirectory(pdfDirectory);
