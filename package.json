@@ -13,6 +13,7 @@
   "author": "Alfredo",
   "license": "ISC",
   "dependencies": {
+    "anticaptcha": "^2.2.0",
     "axios": "^1.7.4",
     "bcryptjs": "^2.4.3",
     "bull": "^4.16.1",

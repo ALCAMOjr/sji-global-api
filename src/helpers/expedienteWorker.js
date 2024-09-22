@@ -8,85 +8,105 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const env = process.env.NODE_ENV || 'development';
+
+let redisConfig;
 
 
-    const expedienteQueue = new Queue('expedienteQueue', {
-        redis: {
-            host: process.env.REDIS_HOST,
-            port: process.env.REDIS_PORT,
-            password: process.env.REDIS_PASS,
-            username: process.env.REDIS_USER,
-            db: 0,
-            connectTimeout: 10000,
-            
-        }
-    });
+if (env === 'production') {
+    redisConfig = {
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT,
+        password: process.env.REDIS_PASS,
+        username: process.env.REDIS_USER,
+        db: 0,
+        connectTimeout: 10000,
+    };
+} else {
+    redisConfig = {
+        host: process.env.REDIS_HOST_DEV || 'localhost', 
+        port: process.env.REDIS_PORT_DEV || 6379,
+        password: process.env.REDIS_PASS_DEV, 
+        username: process.env.REDIS_USER_DEV || 'default', 
+        db: 0,
+        connectTimeout: 10000,
+    };
+}
 
+const expedienteQueue = new Queue('expedienteQueue', {
+    redis: redisConfig
+});
 
+expedienteQueue.process(5, async (job) => {
+    let browser, page;
+    let expedientesConDetalles = [];
+    let expedientesFallidos = []; 
+    let processedCount = 0;
 
+    try {
 
-    expedienteQueue.process(5, async (job) => {
-        let browser, page;
-        let expedientesConDetalles = [];
-        let processedCount = 0;
-    
         try {
-            const expedientes = await ExpedienteDAO.findAll();
-            for (const expediente of expedientes) {
-                const { numero, url } = expediente;
-                if (url) {
-                    try {
-                        ({ browser, page } = await initializeBrowser());
-                        
-                        try {
-                            const scrapedData = await fillExpTribunalA(page, url);
-                            const { juzgado = '', juicio = '', ubicacion = '', partes = '', expediente: scrapedExpediente = '' } = scrapedData;
-    
-                            await ExpedienteDAO.update(new Expediente(numero, expediente.nombre, url, scrapedExpediente, juzgado, juicio, ubicacion, partes));
-                            await ExpedienteDetalleDAO.deleteByExpTribunalANumero(numero);
-    
-                            const scrapedDetails = await scrappingDet(page, url);
-                            if (scrapedDetails.length > 0) {
-                                for (const detail of scrapedDetails) {
-                                    const expedienteDetalle = new ExpedienteDetalle(null, detail.verAcuerdo, detail.fecha, detail.etapa, detail.termino, detail.notificacion, scrapedExpediente, numero);
-                                    await ExpedienteDetalleDAO.create(expedienteDetalle);
-                                }
-                            }
-    
-                        } catch (error) {
-                            console.error(`Error scraping expediente con número ${numero}:`, error);
-                            continue;
-                        } finally {
-                            if (browser) await browser.close();
-                        }
-                        
-                        processedCount++;
-                        const progress = Math.round((processedCount / expedientes.length) * 100);
-                        job.progress(progress);
-                        
-                    } catch (error) {
-                        console.error(`Error al inicializar el navegador para el expediente con número ${numero}:`, error);
-                        continue;
-                    }
-                }
-            }
-    
-            const updatedExpedientes = await ExpedienteDAO.findAll();
-            for (const expediente of updatedExpedientes) {
-                const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(expediente.numero);
-                expedientesConDetalles.push({
-                    ...expediente,
-                    detalles
-                });
-            }
-            return expedientesConDetalles;
-    
+            ({ browser, page } = await initializeBrowser());
         } catch (error) {
-            console.error('Error during the expediente update process:', error);
-            throw new Error('Error during the expediente update process');
+            await job.moveToFailed({ message: 'Error al iniciar el navegador: ' + error.message });
+            await browser.close()
+            return;
         }
-    });
-    
+        const expedientes = await ExpedienteDAO.findAll();
+        for (const expediente of expedientes) {
+            const { numero, url } = expediente;
+            if (url) {
+                try {
+                    const scrapedData = await fillExpTribunalA(page, url);
+                    const { juzgado = '', juicio = '', ubicacion = '', partes = '', expediente: scrapedExpediente = '' } = scrapedData;
+
+                    await ExpedienteDAO.update(new Expediente(numero, expediente.nombre, url, scrapedExpediente, juzgado, juicio, ubicacion, partes));
+                    await ExpedienteDetalleDAO.deleteByExpTribunalANumero(numero);
+
+                    const scrapedDetails = await scrappingDet(page, url);
+                    if (scrapedDetails.length > 0) {
+                        for (const detail of scrapedDetails) {
+                            const expedienteDetalle = new ExpedienteDetalle(null, detail.verAcuerdo, detail.fecha, detail.etapa, detail.termino, detail.notificacion, scrapedExpediente, numero);
+                            await ExpedienteDetalleDAO.create(expedienteDetalle);
+                        }
+                    }
+
+                } catch (error) {
+                    expedientesFallidos.push({
+                        numero,
+                        error: error.message
+                    });
+                    continue; 
+                }
+
+                processedCount++;
+                const progress = Math.round((processedCount / expedientes.length) * 100);
+                console.log("Progreso", progress);
+                job.progress(progress); 
+            }
+        }
+        const updatedExpedientes = await ExpedienteDAO.findAll();
+        for (const expediente of updatedExpedientes) {
+            const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(expediente.numero);
+            expedientesConDetalles.push({
+                ...expediente,
+                detalles
+            });
+        }
+
+        console.log(expedientesFallidos)
+
+        return {
+            expedientesConDetalles,
+        };
+
+    } catch (error) {
+        await job.moveToFailed({ message: 'Error durante la actualización de expedientes: ' + error.message });
+    } finally {
+        if (browser) await browser.close(); 
+    }
+});
+
 
 
 export const cleanJobs = async (states) => {

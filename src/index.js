@@ -61,8 +61,8 @@ app.use((req, res, next) => {
 if (process.env.NODE_ENV !== 'test') {
     initializeCoordinador();
 }
-
 const PORT = process.env.PORT || 3001
+
 
 
  const server = app.listen(PORT, () => {
