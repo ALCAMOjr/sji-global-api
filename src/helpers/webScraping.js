@@ -10,7 +10,7 @@ const username = process.env.TRIBUNAL_USERNAME;
 const password = process.env.TRIBUNAL_PASSWORD;
 const loginUrl = process.env.TRIBUNAL_URL;
 const captchaApiKey = process.env.CAPTCHA_API_KEY;
-
+const env = process.env.NODE_ENV || 'development';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,7 +30,7 @@ async function initializeBrowser() {
 
     try {
         browser = await puppeteer.launch({
-            headless: false,
+            headless: env === 'production', 
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             defaultViewport: null,
         });
@@ -98,7 +98,7 @@ async function initializeBrowserBatch() {
 
     try {
         browser = await puppeteer.launch({
-            headless: false,
+            headless: env === 'production', 
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             defaultViewport: null,
         });
