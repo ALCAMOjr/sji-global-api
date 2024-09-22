@@ -12,6 +12,9 @@
   },
   "author": "Alfredo",
   "license": "ISC",
+  "engines": {
+    "node": "16.x"
+  },
   "dependencies": {
     "anticaptcha": "^2.2.0",
     "axios": "^1.7.4",
