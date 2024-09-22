@@ -1,6 +1,6 @@
-CREATE DATABASE Tribunal;
+CREATE DATABASE railway;
 
-USE Tribunal;
+USE railway;
 
 -- Crear la tabla 'abogados'
 CREATE TABLE abogados (
@@ -69,6 +69,7 @@ CREATE TABLE CreditosSIAL (
   omisos INT,
   estado VARCHAR(250),
   municipio VARCHAR(250),
+  bloquear_gestion_por_estrategia_dual VARCHAR(10),
   calle_y_numero VARCHAR(250),
   fraccionamiento_o_colonia VARCHAR(250),
   codigo_postal VARCHAR(250),

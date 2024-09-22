@@ -4,37 +4,79 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'node:path';
+import { AntiCaptcha, TaskTypes } from 'anticaptcha'; 
 
 const username = process.env.TRIBUNAL_USERNAME;
 const password = process.env.TRIBUNAL_PASSWORD;
 const loginUrl = process.env.TRIBUNAL_URL;
+const captchaApiKey = process.env.CAPTCHA_API_KEY;
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const parentDir = path.dirname(__dirname);
 const pdfDirectory = path.join(parentDir, 'pdfs');
 
-
 if (!fs.existsSync(pdfDirectory)) {
     fs.mkdirSync(pdfDirectory);
 }
 
-async function initializeBrowser() {
-    const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        defaultViewport: null,
-    });
-    const page = await browser.newPage();
-    await page.goto(loginUrl);
-    await page.waitForSelector('#UserName');
-    await page.type('#UserName', username);
-    await page.type('#Password', password);
-    await page.click('#Usuario_btnSesion');
-    await page.waitForNavigation();
 
+const antiCaptcha = new AntiCaptcha(captchaApiKey);
+
+async function initializeBrowser() {
+    let browser, page;
+    try {
+        browser = await puppeteer.launch({
+            headless: false,
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            defaultViewport: null,
+        });
+        page = await browser.newPage();
+        await page.goto(loginUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+    } catch (error) {
+        if (browser) await browser.close();  
+        throw new Error('Error al abrir el navegador o al navegar a la página de login: ' + error.message);
+    }
+
+    try {
+        await page.waitForSelector('#UserName', { timeout: 10000 });
+        await page.type('#UserName', username);
+
+        await page.waitForSelector('#Password', { timeout: 10000 });
+        await page.type('#Password', password);
+    } catch (error) {
+        if (browser) await browser.close();  
+        throw new Error('Error al escribir el nombre de usuario o la contraseña: ' + error.message);
+    }
+
+    try {
+        const captchaImageSelector = '#captchaImage';
+        const captchaImage = await page.$(captchaImageSelector);
+        if (!captchaImage) {
+            throw new Error('No se encontró la imagen del CAPTCHA.');
+        }
+
+        const captchaImageBase64 = await captchaImage.screenshot({ encoding: 'base64' });
+        const captchaSolution = await solveCaptcha(captchaImageBase64);
+        await page.type('#reto', captchaSolution);
+    } catch (error) {
+        if (browser) await browser.close(); 
+        throw new Error('Error al resolver el CAPTCHA: ' + error.message);
+    }
+
+    try {
+        await page.click('#btnSesion');
+        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 });
+    } catch (error) {
+        if (browser) await browser.close();  
+        throw new Error('Error al intentar iniciar sesión o al navegar después de iniciar sesión: ' + error.message);
+    }
+    
     return { browser, page };
 }
+
+
 
 async function fillExpTribunalA(page, url) {
     let navigated = false;
@@ -85,7 +127,7 @@ async function scrappingDet(page, url) {
         } catch (error) {
             attempts++;
             if (attempts >= 3) {
-                throw new Error(`No se pudo navegar a la URL: ${url} después de 3 intentos.`);
+                throw new Error(`No se pudo navegar a la URL`);
             }
         }
     }
@@ -194,3 +236,28 @@ async function setDownloadBehavior(page) {
 const formatDate = (dateString) => {
     return dateString.trim().replace(/\./g, '').toLowerCase();
 };
+
+
+async function solveCaptcha(base64Image) {
+    try {
+        const taskId = await antiCaptcha.createTask({        
+            type: TaskTypes.IMAGE_TO_TEXT,
+            body: base64Image,
+        });
+
+        if (!taskId) {
+            throw new Error('No se pudo crear la tarea para resolver el CAPTCHA.');
+        }
+
+        const result = await antiCaptcha.getTaskResult(taskId);
+        if (!result || !result.solution || !result.solution.text) {
+            throw new Error('No se pudo obtener una solución válida del CAPTCHA.');
+        }
+
+        return result.solution.text;
+
+    } catch (error) {
+        console.error('Error en solveCaptcha:', error.message);
+        throw error;
+    }
+}

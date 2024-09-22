@@ -23,9 +23,10 @@ export const createExpediente = async (req, res) => {
     const { numero, nombre, url } = req.body;
     const { userId } = req;
 
+    let browser;
+    let page;
 
     try {
-        // Verificar el tipo de usuario
         const user = await AbogadoDAO.getById(userId);
         if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
@@ -43,20 +44,26 @@ export const createExpediente = async (req, res) => {
 
         let scrapedData = {};
         let scrapedDetails = [];
-        let browser;
-        let page;
-
-
 
         if (url) {
             try {
                 ({ browser, page } = await initializeBrowser());
 
                 scrapedData = await fillExpTribunalA(page, url);
+                if (!scrapedData || Object.keys(scrapedData).length === 0) {
+                    return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
+                }
+
+                const { juzgado = '', expediente = '' } = scrapedData;
+
+                if (!expediente || !juzgado) {
+                    return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
+                }
+
                 scrapedDetails = await scrappingDet(page, url);
             } catch (scrapingError) {
-                console.error(scrapingError)
-                return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
+                console.error(scrapingError);
+                return res.status(500).send({ error: 'Tribunal doesn\'t work' });
             } finally {
                 if (browser) {
                     await browser.close();
@@ -88,6 +95,7 @@ export const createExpediente = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while creating the expediente' });
     }
 };
+
 
 export const getAllExpedientes = async (req, res) => {
     try {
@@ -165,7 +173,15 @@ export const updateExpediente = async (req, res) => {
             try {
                 ({ browser, page } = await initializeBrowser());
                 const scrapedData = await fillExpTribunalA(page, url);
+                if (!scrapedData || Object.keys(scrapedData).length === 0) {
+                    return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
+                }
+
                 const { juzgado = '', juicio = '', ubicacion = '', partes = '', expediente = '' } = scrapedData;
+
+                if (!expediente || !juzgado) {
+                    return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
+                }
 
                 await ExpedienteDAO.update(new Expediente(numero, nombre, url, expediente, juzgado, juicio, ubicacion, partes));
 
@@ -178,12 +194,12 @@ export const updateExpediente = async (req, res) => {
                     }
                 }
             } catch (scrapingError) {
-                return res.status(500).send({ error: 'Scraping failed for the provided URL.' });
+                return res.status(500).send({ error: 'Tribunal doesn\'t work' });
             } finally {
                 if (browser) await browser.close();
             }
         } else {
-            await ExpedienteDAO.update(new Expediente(numero, nombre));
+            return res.status(400).send({ error: 'URL does not exist' });
         }
 
         const updatedExpedientes = await ExpedienteDAO.findByNumero(numero);
@@ -269,8 +285,7 @@ export const getPdf = async (req, res) => {
             }
 
         } catch (scrapingError) {
-            console.error(scrapingError);
-            res.status(500).send({ error: 'Scraping failed for the provided URL.' });
+            res.status(500).send({ error: 'Tribunal doesn\'t work' });
 
         } finally {
             if (browser) {
@@ -414,17 +429,22 @@ export const getJobStatus = async (req, res) => {
         }
 
         const state = await job.getState();
-        const progress = job.progress()
-        
+        const progress = job.progress();
 
         let result = null;
         if (state === 'completed') {
             result = job.returnvalue; 
+        } 
 
+        else if (state === 'failed') {
+            result = job.failedReason; 
         }
+
+
         res.send({ state, progress, result });
     } catch (error) {
         console.error('Error retrieving job status:', error);
         res.status(500).send({ error: 'An error occurred while retrieving job status' });
     }
 };
+
