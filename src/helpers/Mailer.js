@@ -37,7 +37,6 @@ export const sendEmail = async (to, subject, text) => {
         const info = await transporter.sendMail(mailOptions);
         return info;
     } catch (error) {
-        console.error('Error sending email:', error);
         throw error;
     }
 };
@@ -80,4 +79,38 @@ export const getMexicoCityDate = (date) => {
     const timeZone = 'America/Mexico_City';
     const zonedDate = toZonedTime(date, timeZone);
     return formatInTimeZone(zonedDate, timeZone, 'yyyy-MM-dd');
+};
+
+
+export const generateEmailContentScrapingFailUser = (errorMessage) => {
+    const subject = 'Error en el proceso de actualización de expedientes';
+    const text = `Hubo un error al intentar iniciar sesión en el scraping. Detalles del error: ${errorMessage}. 
+    Por favor, intente de nuevo o contacte al soporte técnico.`;
+    
+    return { subject, text };
+};
+
+export const generateEmailContentScrapingFailSupport = (errorMessage) => {
+    const subject = 'Error en el proceso de actualización de expedientes';
+    const text = `Hubo un error al intentar iniciar sesión en el scraping. Detalles del error: ${errorMessage}. 
+    Por favor, verifica este fallo.`;
+    
+    
+    return { subject, text };
+};
+
+
+export const generateEmailContentSuccess = () => {
+    const subject = 'Proceso de actualización de expedientes completado';
+    const text = 'El proceso de actualización de expedientes se completó exitosamente sin errores.';
+
+    return { subject, text };
+};
+
+export const generateEmailContentPartialSuccess = (expedientesFallidos) => {
+    const subject = 'Proceso de actualización de expedientes completado con fallos';
+    const fallidosList = expedientesFallidos.map(exp => `Número: ${exp.numero}, Error: ${exp.error}`).join('\n');
+    const text = `El proceso de actualización se ejecutó correctamente excepto para los siguientes expedientes:\n${fallidosList}.`;
+
+    return { subject, text };
 };

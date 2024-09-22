@@ -406,7 +406,9 @@ export const startUpdateExpedientes = async (req, res) => {
         return res.status(403).json({ message: 'Unauthorized' });
     }
     try {
-        const job = await expedienteQueue.add();
+        const job = await expedienteQueue.add({
+            userEmail: user.email 
+        });
         res.status(202).send({ jobId: job.id, message: 'Expediente update process started' });
     } catch (error) {
         console.error('Error starting expediente update process:', error);
@@ -429,7 +431,7 @@ export const getJobStatus = async (req, res) => {
         }
 
         const state = await job.getState();
-        const progress = job.progress();
+        const progress = job.progress()
 
         let result = null;
         if (state === 'completed') {
@@ -439,7 +441,6 @@ export const getJobStatus = async (req, res) => {
         else if (state === 'failed') {
             result = job.failedReason; 
         }
-
 
         res.send({ state, progress, result });
     } catch (error) {
