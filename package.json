@@ -13,8 +13,8 @@
   "author": "Alfredo",
   "license": "ISC",
   "engines": {
-    "node": "16.20.2",
-    "npm": "8.19.4"
+    "node": "18.20.3",
+    "npm": "10.7.0"
   },
   "dependencies": {
     "anticaptcha": "^2.2.0",
