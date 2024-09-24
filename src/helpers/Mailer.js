@@ -114,3 +114,41 @@ export const generateEmailContentPartialSuccess = (expedientesFallidos) => {
 
     return { subject, text };
 };
+
+
+export const generateEmailContentCriticalError = (errorMessage, isForSupport = false) => {
+    const subject = 'Error Crítico en el Proceso de Actualización de Expedientes';
+    const textForUser = `
+        Estimado usuario,
+
+        Ocurrió un error inesperado durante el proceso de actualización de los expedientes. 
+        El sistema no pudo completar la operación debido a un fallo crítico.
+
+        Detalles del error:
+        ${errorMessage}
+
+        Por favor, contacte al soporte técnico para obtener más información y asistencia.
+
+        Atentamente,
+        Equipo de soporte técnico
+    `;
+
+    const textForSupport = `
+        Estimado equipo de soporte,
+
+        Ocurrió un error crítico durante el proceso de actualización de los expedientes.
+        El sistema se detuvo de forma inesperada.
+
+        Detalles del error:
+        ${errorMessage}
+
+        Por favor, revisen este problema lo antes posible.
+
+        Atentamente,
+        Sistema de monitoreo
+    `;
+
+    const text = isForSupport ? textForSupport : textForUser;
+
+    return { subject, text };
+}

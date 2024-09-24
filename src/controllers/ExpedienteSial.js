@@ -31,6 +31,7 @@ export const uploadAndConvertCsv = async (req, res) => {
       omisos: 'omisos',
       estado: 'estado',
       municipio: 'municipio',
+      bloquear_gestion_por_estrategia_dual: 'bloquear_gestion_por_estrategia_dual', // Añadido aquí
       calle_y_numero: 'calle_y_numero',
       fraccionamiento_o_colonia: 'fraccionamiento_o_colonia',
       codigo_postal: 'codigo_postal',
@@ -68,9 +69,15 @@ export const uploadAndConvertCsv = async (req, res) => {
 
       const insertPromises = jsonArray.map(row => {
         const values = {};
+
         for (const [key, value] of Object.entries(fieldMapping)) {
-          values[key] = row[value];
+          if (key === 'bloquear_gestion_por_estrategia_dual') {
+            values[key] = row[value] === '1';
+          } else {
+            values[key] = row[value] || null;
+          }
         }
+
         return CreditoSialDAO.insert(values);
       });
 
@@ -168,3 +175,5 @@ export const getAllEtapas = async (req, res) => {
 
   
 };
+
+
