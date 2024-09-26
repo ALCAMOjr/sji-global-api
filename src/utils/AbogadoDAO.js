@@ -3,7 +3,7 @@ import Abogado from "../models/Abogado.js";
 
 class AbogadoDAO {
     static async getById(id) {
-        const [rows] = await pool.query('SELECT * FROM abogados WHERE id = ?', [id]);
+        const [rows] = await pool.query('SELECT id, username, nombre, apellido, cedula, email, telefono, user_type FROM abogados WHERE id = ?', [id]);
         return rows.length ? new Abogado(rows[0]) : null;
     }
     static async getByEmail(email) {

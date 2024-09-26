@@ -1,16 +1,16 @@
 import Queue from 'bull';
-import { initializeBrowserBatch ,fillExpTribunalA, scrappingDet } from '../helpers/webScraping.js';
+import { initializeBrowserBatch, fillExpTribunalA, scrappingDet } from '../helpers/webScraping.js';
 import Expediente from '../models/Expediente.js';
 import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
 import ExpedienteDetalle from '../models/ExpedienteDet.js';
 import ExpedienteDAO from '../utils/ExpedienteDAO.js';
-import { sendEmail, generateEmailContentScrapingFailUser, generateEmailContentCriticalError, generateEmailContentScrapingFailSupport, generateEmailContentSuccess, generateEmailContentPartialSuccess } from './Mailer.js';
+import { generateEmailContentScrapingFailUser, generateEmailContentCriticalError, generateEmailContentScrapingFailSupport, generateEmailContentSuccess, generateEmailContentPartialSuccess } from '../helpers/EmailFuncionts.js';
+import emailQueue from '../workers/EmailWorker.js';
 
-const SupprtGmail = process.env.SUPORT_GMAIL
+const SupprtGmail = process.env.SUPORT_GMAIL;
 const env = process.env.NODE_ENV || 'development';
 
 let redisConfig;
-
 
 if (env === 'production') {
     redisConfig = {
@@ -45,19 +45,23 @@ expedienteQueue.process(5, async (job) => {
     let expedientesFallidos = [];
     let processedCount = 0;
     const { userEmail } = job.data;
+
     try {
         ({ browser, page } = await initializeBrowserBatch());
     } catch (error) {
         const userEmailContent = generateEmailContentScrapingFailUser(error.message);
         const supportEmailContent = generateEmailContentScrapingFailSupport(error.message);
-        await sendEmail(userEmail, userEmailContent.subject, userEmailContent.text);
-        await sendEmail(SupprtGmail, supportEmailContent.subject, supportEmailContent.text);
+        await emailQueue.add({ to: userEmail, subject: userEmailContent.subject, text: userEmailContent.text });
+        await emailQueue.add({ to: SupprtGmail, subject: supportEmailContent.subject, text: supportEmailContent.text });
+
         await job.moveToFailed({ message: 'Tribunal doesn\'t work' });
         if (browser) await browser.close();
         return;
-    } 
+    }
+
     try {
         const expedientes = await ExpedienteDAO.findAll();
+
         for (const expediente of expedientes) {
             const { numero, url } = expediente;
             if (url) {
@@ -83,11 +87,13 @@ expedienteQueue.process(5, async (job) => {
                     });
                     continue;
                 }
+
                 processedCount++;
                 const progress = Math.round((processedCount / expedientes.length) * 100);
                 job.progress(progress);
             }
         }
+
         const updatedExpedientes = await ExpedienteDAO.findAll();
         for (const expediente of updatedExpedientes) {
             const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(expediente.numero);
@@ -98,33 +104,30 @@ expedienteQueue.process(5, async (job) => {
         }
 
     } catch (error) {
-  
         const userErrorEmailContent = generateEmailContentCriticalError(error.message, false);
-        await sendEmail(userEmail, userErrorEmailContent.subject, userErrorEmailContent.text);
-    
         const supportErrorEmailContent = generateEmailContentCriticalError(error.message, true);
-        await sendEmail(SupprtGmail, supportErrorEmailContent.subject, supportErrorEmailContent.text);
-    
+        await emailQueue.add({ to: userEmail, subject: userErrorEmailContent.subject, text: userErrorEmailContent.text });
+        await emailQueue.add({ to: SupprtGmail, subject: supportErrorEmailContent.subject, text: supportErrorEmailContent.text });
+
         await job.moveToFailed({ message: `Something was wrong ${error.message}` });
     } finally {
         if (browser) await browser.close();
     }
+
     if (expedientesFallidos.length === 0) {
         const successEmailContent = generateEmailContentSuccess();
-        await sendEmail(userEmail, successEmailContent.subject, successEmailContent.text);
-        await sendEmail(SupprtGmail, successEmailContent.subject, successEmailContent.text);
+        await emailQueue.add({ to: userEmail, subject: successEmailContent.subject, text: successEmailContent.text });
+        await emailQueue.add({ to: SupprtGmail, subject: successEmailContent.subject, text: successEmailContent.text });
     } else {
         const partialSuccessEmailContent = generateEmailContentPartialSuccess(expedientesFallidos);
-        await sendEmail(userEmail, partialSuccessEmailContent.subject, partialSuccessEmailContent.text);
-        await sendEmail(SupprtGmail, partialSuccessEmailContent.subject, partialSuccessEmailContent.text);
+        await emailQueue.add({ to: userEmail, subject: partialSuccessEmailContent.subject, text: partialSuccessEmailContent.text });
+        await emailQueue.add({ to: SupprtGmail, subject: partialSuccessEmailContent.subject, text: partialSuccessEmailContent.text });
     }
 
     return {
         expedientesConDetalles,
     };
 });
-
-
 
 
 

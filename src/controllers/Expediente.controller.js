@@ -11,7 +11,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import csv from 'csvtojson';
-import expedienteQueue from '..//helpers/expedienteWorker.js';
+import expedienteQueue from '../workers/expedienteWorker.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

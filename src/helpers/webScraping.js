@@ -25,7 +25,7 @@ if (!fs.existsSync(pdfDirectory)) {
 const antiCaptcha = new AntiCaptcha(captchaApiKey);
 async function initializeBrowser() {
     let browser, page;
-    const maxAttempts = 5;
+    const maxAttempts = 10;
     let attempts = 0;
 
     try {
