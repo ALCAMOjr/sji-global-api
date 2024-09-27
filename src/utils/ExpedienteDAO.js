@@ -32,6 +32,51 @@ import  Expediente  from '../models/Expediente.js';
        const [result] = await pool.query('DELETE FROM expTribunalA WHERE numero = ?', [numero]);
        return result;
     }
+    // ExpedienteDAO.js
+static async findAllWithDetails() {
+    const query = `
+        SELECT 
+            a.numero, a.nombre, a.url, a.expediente, a.juzgado, a.juicio, a.ubicacion, a.partes,
+            d.id AS detalle_id, d.ver_acuerdo, d.fecha, d.etapa, d.termino, d.notificacion, d.expediente AS detalle_expediente
+        FROM 
+            expTribunalA a
+        LEFT JOIN 
+            expTribunalDetA d ON a.numero = d.expTribunalA_numero
+    `;
+
+    const [rows] = await pool.query(query);
+    const expedientesMap = rows.reduce((map, row) => {
+        if (!map[row.numero]) {
+            map[row.numero] = {
+                numero: row.numero,
+                nombre: row.nombre,
+                url: row.url,
+                expediente: row.expediente,
+                juzgado: row.juzgado,
+                juicio: row.juicio,
+                ubicacion: row.ubicacion,
+                partes: row.partes,
+                detalles: []  
+            };
+        }
+        if (row.detalle_id) {
+            map[row.numero].detalles.push({
+                id: row.detalle_id,
+                ver_acuerdo: row.ver_acuerdo,
+                fecha: row.fecha,
+                etapa: row.etapa,
+                termino: row.termino,
+                notificacion: row.notificacion,
+                expediente: row.detalle_expediente
+            });
+        }
+
+        return map;
+    }, {});
+    return Object.values(expedientesMap);
+}
+
+    
 }
 
 export default ExpedienteDAO;

@@ -30,6 +30,16 @@ class ExpedienteDetalleDAO {
         const query = 'DELETE FROM expTribunalDetA WHERE expTribunalA_numero = ?';
         await pool.query(query, [expTribunalANumero]);
     }
+    static async findByExpTribunalANumeros(expTribunalANumeros) {
+        const query = `
+            SELECT * 
+            FROM expTribunalDetA 
+            WHERE expTribunalA_numero IN (?)
+        `;
+        const [results] = await pool.query(query, [expTribunalANumeros]);
+        return results.map(result => new ExpedienteDetalle(result.id, result.ver_acuerdo, result.fecha, result.etapa, result.termino, result.notificacion, result.expediente, result.expTribunalA_numero));
+    }
+    
 }
 
 export default ExpedienteDetalleDAO;

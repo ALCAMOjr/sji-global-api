@@ -97,6 +97,7 @@ export const createExpediente = async (req, res) => {
 };
 
 
+// Controlador
 export const getAllExpedientes = async (req, res) => {
     try {
         const { userId } = req;
@@ -104,19 +105,7 @@ export const getAllExpedientes = async (req, res) => {
         if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
         }
-
-        const expedientes = await ExpedienteDAO.findAll();
-
-        const expedientesConDetalles = [];
-
-        for (const expediente of expedientes) {
-            const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(expediente.numero);
-
-            expedientesConDetalles.push({
-                ...expediente,
-                detalles
-            });
-        }
+        const expedientesConDetalles = await ExpedienteDAO.findAllWithDetails();
 
         res.status(200).send(expedientesConDetalles);
     } catch (error) {
@@ -124,6 +113,7 @@ export const getAllExpedientes = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while retrieving expedientes' });
     }
 };
+
 
 export const getExpedientesByNumero = async (req, res) => {
     try {
@@ -337,24 +327,17 @@ export const uploadCsvExpediente = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 
-        let isFirstFile = true;
-        let baseHeaders = [];
-
+        const requiredHeaders = ['Expediente', 'Url'];
+        
         for (const file of files) {
             const csvBuffer = file.buffer.toString('utf-8');
             const jsonArray = await csv().fromString(csvBuffer);
 
-            if (isFirstFile) {
-                baseHeaders = Object.keys(jsonArray[0]);
-                if (baseHeaders.length !== 2 || !baseHeaders.includes('Expediente') || !baseHeaders.includes('Url')) {
-                    return res.status(400).json({ message: 'The CSV files must contain only "Expediente" and "Url" fields.' });
-                }
-                isFirstFile = false;
-            } else {
-                const currentHeaders = Object.keys(jsonArray[0]);
-                if (currentHeaders.length !== baseHeaders.length || !currentHeaders.every((header, index) => header === baseHeaders[index])) {
-                    return res.status(400).json({ message: 'All CSV files must have the same fields.' });
-                }
+            const currentHeaders = Object.keys(jsonArray[0]);
+            const missingFields = requiredHeaders.filter(header => !currentHeaders.includes(header));
+
+            if (missingFields.length > 0) {
+                return res.status(400).json({ message: 'Invalid Fields in the files' });
             }
 
             for (const row of jsonArray) {

@@ -21,8 +21,6 @@ export const uploadAndConvertCsv = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    await CreditoSialDAO.deleteAll();
-
     const fieldMapping = {
       id: 'id',
       num_credito: 'num_credito',
@@ -31,7 +29,7 @@ export const uploadAndConvertCsv = async (req, res) => {
       omisos: 'omisos',
       estado: 'estado',
       municipio: 'municipio',
-      bloquear_gestion_por_estrategia_dual: 'bloquear_gestion_por_estrategia_dual', // Añadido aquí
+      bloquear_gestion_por_estrategia_dual: 'bloquear_gestion_por_estrategia_dual',
       calle_y_numero: 'calle_y_numero',
       fraccionamiento_o_colonia: 'fraccionamiento_o_colonia',
       codigo_postal: 'codigo_postal',
@@ -50,34 +48,31 @@ export const uploadAndConvertCsv = async (req, res) => {
       juzgado: 'juzgado'
     };
 
-    let isFirstFile = true;
-    let baseHeaders = [];
+    let baseHeaders = Object.values(fieldMapping);
 
     for (const file of files) {
       const csvBuffer = file.buffer.toString('utf-8');
       const jsonArray = await csv().fromString(csvBuffer);
 
-      if (isFirstFile) {
-        baseHeaders = Object.keys(jsonArray[0]);
-        isFirstFile = false;
-      } else {
-        const currentHeaders = Object.keys(jsonArray[0]);
-        if (currentHeaders.length !== baseHeaders.length || !currentHeaders.every((header, index) => header === baseHeaders[index])) {
-          return res.status(400).json({ message: 'All CSV files must have the same fields.' });
-        }
+      const currentHeaders = Object.keys(jsonArray[0]);
+
+      const missingFields = baseHeaders.filter(header => !currentHeaders.includes(header));
+      if (missingFields.length > 0) {
+        return res.status(400).json({ message: 'Invalid Fields in the files' });
       }
+    }
+
+    await CreditoSialDAO.deleteAll();
+
+    for (const file of files) {
+      const csvBuffer = file.buffer.toString('utf-8');
+      const jsonArray = await csv().fromString(csvBuffer);
 
       const insertPromises = jsonArray.map(row => {
         const values = {};
-
         for (const [key, value] of Object.entries(fieldMapping)) {
-          if (key === 'bloquear_gestion_por_estrategia_dual') {
-            values[key] = row[value] === '1';
-          } else {
-            values[key] = row[value] || null;
-          }
+          values[key] = key === 'bloquear_gestion_por_estrategia_dual' ? row[value] === '1' : row[value] || null;
         }
-
         return CreditoSialDAO.insert(values);
       });
 
@@ -91,6 +86,7 @@ export const uploadAndConvertCsv = async (req, res) => {
     res.status(500).json({ message: 'Error converting CSV to JSON', error });
   }
 };
+
 
 
 export const getAllCreditsSial = async (req, res) => {
