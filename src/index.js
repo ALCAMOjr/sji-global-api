@@ -1,14 +1,15 @@
 import dotenv from 'dotenv'
 import { app } from "./app.js"
 import { initializeCoordinador } from './init.js'
-import { updateExpedientes } from './helpers/UpdateData.js';
+// import { updateExpedientes } from './helpers/UpdateData.js';
 import cron from 'node-cron';
-import { checkAndCancelOverdueTasks } from './helpers/CancelTask.js';
 import { deleteAllFilesInDirectory } from './helpers/Pdfs.js';  
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { cleanJobs, clearWorkspace } from './helpers/expedienteWorker.js';
+import { cleanJobs, clearWorkspace } from './workers/expedienteWorker.js';
 dotenv.config()
+
+
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,23 +35,6 @@ cron.schedule('0 * * * *', () => {
     scheduled: true,
     timezone: "America/Monterrey"
 });
-
-cron.schedule('0 20 * * *', async () => { 
-    await updateExpedientes();  
-}, {
-    scheduled: true,
-    timezone: "America/Monterrey" 
-});
-
-
-cron.schedule('0 7 * * *', () => {
-    checkAndCancelOverdueTasks();
-}, {
-    scheduled: true,
-    timezone: "America/Monterrey"
-});
-
-
 
 app.use((req, res, next) => {
     res.status(404).json({

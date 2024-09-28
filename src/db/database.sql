@@ -61,7 +61,7 @@ CREATE TABLE Tareas (
 
 
 -- Crear la tabla 'CreditosSIAL'
-CREATE TABLE CreditosSIAL (
+CREATE TABLE  CreditosSIAL(
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   num_credito BIGINT NOT NULL,
   estatus VARCHAR(250),

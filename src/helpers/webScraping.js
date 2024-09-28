@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,7 +10,7 @@ const username = process.env.TRIBUNAL_USERNAME;
 const password = process.env.TRIBUNAL_PASSWORD;
 const loginUrl = process.env.TRIBUNAL_URL;
 const captchaApiKey = process.env.CAPTCHA_API_KEY;
-
+const env = process.env.NODE_ENV || 'development';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,59 +23,138 @@ if (!fs.existsSync(pdfDirectory)) {
 
 
 const antiCaptcha = new AntiCaptcha(captchaApiKey);
-
 async function initializeBrowser() {
     let browser, page;
+    const maxAttempts = 10;
+    let attempts = 0;
+
     try {
         browser = await puppeteer.launch({
-            headless: false,
+            headless: env === 'production', 
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             defaultViewport: null,
         });
         page = await browser.newPage();
         await page.goto(loginUrl, { waitUntil: 'networkidle2', timeout: 60000 });
-    } catch (error) {
-        if (browser) await browser.close();  
-        throw new Error('Error al abrir el navegador o al navegar a la página de login: ' + error.message);
-    }
-
-    try {
         await page.waitForSelector('#UserName', { timeout: 10000 });
         await page.type('#UserName', username);
 
-        await page.waitForSelector('#Password', { timeout: 10000 });
-        await page.type('#Password', password);
-    } catch (error) {
-        if (browser) await browser.close();  
-        throw new Error('Error al escribir el nombre de usuario o la contraseña: ' + error.message);
-    }
+        let captchaSuccess = false;
 
-    try {
-        const captchaImageSelector = '#captchaImage';
-        const captchaImage = await page.$(captchaImageSelector);
-        if (!captchaImage) {
-            throw new Error('No se encontró la imagen del CAPTCHA.');
+        while (!captchaSuccess && attempts < maxAttempts) {
+            try {
+                attempts += 1;
+                await page.waitForSelector('#Password', { timeout: 10000 });
+                await page.type('#Password', password);
+
+                const captchaImageSelector = '#captchaImage';
+                const captchaImage = await page.$(captchaImageSelector);
+                if (!captchaImage) {
+                    throw new Error('No se encontró la imagen del CAPTCHA.');
+                }
+
+                const captchaImageBase64 = await captchaImage.screenshot({ encoding: 'base64' });
+                const captchaSolution = await solveCaptcha(captchaImageBase64);
+                await page.type('#reto', captchaSolution);  
+                await page.click('#btnSesion');
+                await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 });
+
+                captchaSuccess = true;
+
+            } catch (error) {
+                const modalVisible = await page.$('#ok');
+
+                if (modalVisible) {
+                    await page.click('#ok');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await page.evaluate(() => {
+                        document.querySelector('#Password').value = '';
+                        document.querySelector('#reto').value = '';
+                    });
+                }
+
+                if (attempts >= maxAttempts) {
+                    if (browser) await browser.close();
+                    throw new Error('Número máximo de intentos alcanzado. No se pudo resolver el CAPTCHA.');
+                }
+            }
         }
-
-        const captchaImageBase64 = await captchaImage.screenshot({ encoding: 'base64' });
-        const captchaSolution = await solveCaptcha(captchaImageBase64);
-        await page.type('#reto', captchaSolution);
     } catch (error) {
-        if (browser) await browser.close(); 
-        throw new Error('Error al resolver el CAPTCHA: ' + error.message);
+        console.error(error);
+        if (browser) await browser.close();
+        throw new Error('Error al iniciar sesión o al resolver el CAPTCHA: ' + error.message);
     }
 
-    try {
-        await page.click('#btnSesion');
-        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 });
-    } catch (error) {
-        if (browser) await browser.close();  
-        throw new Error('Error al intentar iniciar sesión o al navegar después de iniciar sesión: ' + error.message);
-    }
-    
     return { browser, page };
 }
 
+
+
+
+async function initializeBrowserBatch() {
+    let browser, page;
+    const maxAttempts = 20;
+    let attempts = 0;
+
+    try {
+        browser = await puppeteer.launch({
+            headless: env === 'production', 
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            defaultViewport: null,
+        });
+        page = await browser.newPage();
+        await page.goto(loginUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+        await page.waitForSelector('#UserName', { timeout: 10000 });
+        await page.type('#UserName', username);
+
+        let captchaSuccess = false;
+
+        while (!captchaSuccess && attempts < maxAttempts) {
+            try {
+                attempts += 1;
+                await page.waitForSelector('#Password', { timeout: 10000 });
+                await page.type('#Password', password);
+
+                const captchaImageSelector = '#captchaImage';
+                const captchaImage = await page.$(captchaImageSelector);
+                if (!captchaImage) {
+                    throw new Error('No se encontró la imagen del CAPTCHA.');
+                }
+
+                const captchaImageBase64 = await captchaImage.screenshot({ encoding: 'base64' });
+                const captchaSolution = await solveCaptcha(captchaImageBase64);
+                await page.type('#reto', captchaSolution);  
+                await page.click('#btnSesion');
+                await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 });
+
+                captchaSuccess = true;
+
+            } catch (error) {
+                const modalVisible = await page.$('#ok');
+
+                if (modalVisible) {
+                    await page.click('#ok');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await page.evaluate(() => {
+                        document.querySelector('#Password').value = '';
+                        document.querySelector('#reto').value = '';
+                    });
+                }
+
+                if (attempts >= maxAttempts) {
+                    if (browser) await browser.close();
+                    throw new Error('Número máximo de intentos alcanzado. No se pudo resolver el CAPTCHA.');
+                }
+            }
+        }
+    } catch (error) {
+        console.error(error);
+        if (browser) await browser.close();
+        throw new Error('Error al iniciar sesión o al resolver el CAPTCHA: ' + error.message);
+    }
+
+    return { browser, page };
+}
 
 
 async function fillExpTribunalA(page, url) {
@@ -221,7 +300,7 @@ async function scrappingPdf(page, url, browser, targetDate) {
 
 
 
-export { initializeBrowser, fillExpTribunalA, scrappingDet, scrappingPdf };
+export { initializeBrowser, initializeBrowserBatch, fillExpTribunalA, scrappingDet, scrappingPdf };
 
 
 

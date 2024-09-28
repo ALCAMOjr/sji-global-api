@@ -15,4 +15,5 @@ router.get('/expedientesSial/number/:number', abogadoExtractor, getExpedientesBy
 router.get('/expedientesSial/etapas', abogadoExtractor, getAllEtapas);
 
 
+
 export default router;

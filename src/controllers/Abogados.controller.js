@@ -3,7 +3,9 @@ import bcryptjs from 'bcryptjs';
 import jsonwebtoken from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import TareaDAO from '../utils/TareaDAO.js';
-import { sendEmail, generateWelcomeEmail } from '../helpers/Mailer.js'; 
+import emailQueue from '../config/emailQueque.config.js'; 
+import { generateWelcomeEmail } from '../helpers/EmailFuncionts.js'; 
+import { generatePassword } from '../helpers/generatePassword.js';
 
 dotenv.config();
 
@@ -60,11 +62,11 @@ export const login = async (req, res) => {
 };
 export const registerUser = async (req, res) => {
     try {
-        const { username, password, userType, nombre, apellido, cedula, email, telefono } = req.body;
+        const { username, userType, nombre, apellido, cedula, email, telefono } = req.body;
         const { userId } = req;
 
-        if (!username || !password || !email) {
-            return res.status(400).send({ error: 'Username, password, and email are required' });
+        if (!username || !email) {
+            return res.status(400).send({ error: 'Username and email are required' });
         }
 
         const user = await AbogadoDAO.getById(userId);
@@ -81,8 +83,11 @@ export const registerUser = async (req, res) => {
         if (existingEmail) {
             return res.status(400).send({ error: 'Email is already registered' });
         }
+
+        const generatedPassword = generatePassword();
         const salt = await bcryptjs.genSalt();
-        const hashedPassword = await bcryptjs.hash(password, salt);
+        const hashedPassword = await bcryptjs.hash(generatedPassword, salt);
+
         const newUser = await AbogadoDAO.create({
             username,
             password: hashedPassword,
@@ -94,8 +99,14 @@ export const registerUser = async (req, res) => {
             telefono
         });
 
-        const { subject, text } = generateWelcomeEmail(nombre, username, password);
-        await sendEmail(email, subject, text);
+        const { subject, text } = generateWelcomeEmail(nombre, username, generatedPassword);
+
+        const emailData = {
+            to: email,
+            subject,
+            text
+        };
+        await emailQueue.add(emailData);
 
         res.status(201).send(newUser);
     } catch (error) {
@@ -103,6 +114,7 @@ export const registerUser = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while registering the abogado', details: error.message });
     }
 };
+
 export const updateAbogado = async (req, res) => {
     try {
         const { id } = req.params;

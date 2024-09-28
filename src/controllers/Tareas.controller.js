@@ -3,7 +3,8 @@ import TareaDAO from '../utils/TareaDAO.js';
 import AbogadoDAO from "../utils/AbogadoDAO.js";
 import ExpedienteDAO from "../utils/ExpedienteDAO.js";
 import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
-import { sendEmail, generateTaskAssignmentEmail, generateTaskCompletionEmail, generateTaskCancellationEmail, getMexicoCityDate } from '../helpers/Mailer.js';
+import emailQueue from '../workers/EmailWorker.js';
+import { generateTaskAssignmentEmail, generateTaskCompletionEmail, getMexicoCityDate } from '../helpers/EmailFuncionts.js';
 
 export const createTask = async (req, res) => {
     try {
@@ -57,7 +58,12 @@ export const createTask = async (req, res) => {
         const tareaCreada = await TareaDAO.create(nuevaTarea);
 
         const { subject, text } = generateTaskAssignmentEmail(abogado, exptribunalA_numero);
-        await sendEmail(abogado.email, subject, text);
+        
+        await emailQueue.add({
+            to: abogado.email,
+            subject,
+            text
+        });
 
         res.status(201).send(tareaCreada);
     } catch (error) {
@@ -213,9 +219,12 @@ export const completeTask = async (req, res) => {
         const coordinadores = await AbogadoDAO.getAllCoordinadores();
         const { subject, text } = generateTaskCompletionEmail(user, taskId);
         for (const coordinador of coordinadores) {
-            await sendEmail(coordinador.email, subject, text);
+            await emailQueue.add({
+                to: coordinador.email,
+                subject,
+                text
+            });
         }
-
         res.status(200).send({ message: 'Task completed successfully' });
     } catch (error) {
         console.error(error);
@@ -351,9 +360,6 @@ export const cancelTask = async (req, res) => {
         if (!abogado) {
             return res.status(400).send({ error: 'Associated lawyer not found' });
         }
-
-        const { subject, text } = generateTaskCancellationEmail(abogado, taskId);
-        await sendEmail(abogado.email, subject, text);
 
         res.status(200).send({ message: 'Task canceled and notification sent successfully' });
     } catch (error) {
