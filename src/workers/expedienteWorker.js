@@ -44,7 +44,7 @@ expedienteQueue.process(5, async (job) => {
     let expedientesConDetalles = [];
     let expedientesFallidos = [];
     let processedCount = 0;
-    const { userEmail } = job.data;
+    const { userEmail, expedientes: passedExpedientes } = job.data; 
 
     try {
         ({ browser, page } = await initializeBrowserBatch());
@@ -59,8 +59,14 @@ expedienteQueue.process(5, async (job) => {
         return;
     }
 
+    let expedientes;
+
     try {
-        const expedientes = await ExpedienteDAO.findAll();
+        if (passedExpedientes && passedExpedientes.length > 0) {
+            expedientes = passedExpedientes; 
+        } else {
+            expedientes = await ExpedienteDAO.findAll(); 
+        }
 
         for (const expediente of expedientes) {
             const { numero, url } = expediente;
@@ -128,7 +134,6 @@ expedienteQueue.process(5, async (job) => {
         expedientesConDetalles,
     };
 });
-
 
 
 

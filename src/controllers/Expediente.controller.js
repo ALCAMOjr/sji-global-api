@@ -311,7 +311,10 @@ export const getFilename = async (req, res) => {
 export const uploadCsvExpediente = async (req, res) => {
     try {
         const { userId } = req;
+        let { isUpdatable } = req.body; 
         const files = req.files;
+
+        isUpdatable = isUpdatable === 'true' || isUpdatable === true;2
 
         if (!files || files.length === 0) {
             return res.status(400).json({ message: 'No files uploaded' });
@@ -328,7 +331,9 @@ export const uploadCsvExpediente = async (req, res) => {
         }
 
         const requiredHeaders = ['Expediente', 'Url'];
-        
+
+        let expedientestoUpdate = []; 
+
         for (const file of files) {
             const csvBuffer = file.buffer.toString('utf-8');
             const jsonArray = await csv().fromString(csvBuffer);
@@ -345,7 +350,6 @@ export const uploadCsvExpediente = async (req, res) => {
                 const url = row['Url'];
 
                 const existingEntries = await ExpedienteDAO.findByNumero(expediente);
-
                 const acreditadoData = await CreditoSialDAO.getAcreditadoByNumCredito(expediente);
                 const acreditado = acreditadoData.length > 0 ? acreditadoData[0].acreditado : null;
 
@@ -370,16 +374,26 @@ export const uploadCsvExpediente = async (req, res) => {
                     };
                     await ExpedienteDAO.create(newEntry);
                 }
+
+                expedientestoUpdate.push({ numero: expediente, url, nombre: acreditado });
             }
         }
 
-        const rows = await ExpedienteDAO.findAll();
-        res.status(200).json({ message: 'The CSV files have been processed and the data has been inserted/updated successfully', data: rows });
+        if (isUpdatable) {
+            const job = await expedienteQueue.add({
+                userEmail: user.email,
+                expedientes: expedientestoUpdate 
+            });
+            return res.status(202).json({ jobId: job.id, message: 'Expedientes update process started with the provided CSV expedientes' });
+        }
+
+        res.status(200).json({ message: 'The CSV files have been processed successfully without updating expedientes via worker.' });
     } catch (error) {
         console.error('Error processing CSV files:', error);
         res.status(500).json({ message: 'Error processing CSV files', error });
     }
 };
+
 
 
 export const startUpdateExpedientes = async (req, res) => {
