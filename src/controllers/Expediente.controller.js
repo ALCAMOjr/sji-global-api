@@ -213,31 +213,29 @@ export const deleteExpediente = async (req, res) => {
     try {
         const { numero } = req.params;
         const { userId } = req;
-
-
         const user = await AbogadoDAO.getById(userId);
         if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
         }
-
         const existingExpedientes = await ExpedienteDAO.findByNumero(numero);
         if (existingExpedientes.length <= 0) {
             return res.status(404).send({ error: 'Expediente not found' });
         }
-
         const pendingTasks = await TareaDAO.findPendingTasksByExpTribunalANumero(numero);
+
         if (pendingTasks.length > 0) {
             return res.status(400).send({ error: 'Cannot delete expediente with pending tasks' });
         }
 
-        await ExpedienteDetalleDAO.deleteByExpTribunalANumero(numero);
-        const result = await ExpedienteDAO.delete(numero);
+        await TareaDAO.deleteNonPendingTasksByExpTribunalANumero(numero);
 
+        await ExpedienteDetalleDAO.deleteByExpTribunalANumero(numero);
+
+        const result = await ExpedienteDAO.delete(numero);
 
         if (result.affectedRows <= 0) {
             return res.status(404).send({ error: 'Failed to delete expediente' });
         }
-
         res.sendStatus(204);
     } catch (error) {
         console.error(error);

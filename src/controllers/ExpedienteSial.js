@@ -98,7 +98,7 @@ export const getAllCreditsSial = async (req, res) => {
     }
 
     const rows = await CreditoSialDAO.getAll();
-    res.status(200).json({ data: rows });
+    res.status(200).send(rows);
   } catch (error) {
     console.error('Error retrieving data from CreditosSIAL:', error);
     res.status(500).json({ message: 'Error retrieving data from CreditosSIAL', error });

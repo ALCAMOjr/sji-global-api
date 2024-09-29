@@ -73,6 +73,18 @@ class TareaDAO {
         const [rows] = await pool.query(query, [abogadoId]);
         return rows;
     }
+
+    static async deleteNonPendingTasksByExpTribunalANumero(expTribunalANumero) {
+        const query = `
+            DELETE FROM Tareas
+            WHERE exptribunalA_numero = ?
+              AND estado_tarea NOT IN ('Asignada', 'Iniciada')
+        `;
+    
+        const [result] = await pool.query(query, [expTribunalANumero]);
+        return result;
+    }
+    
     
     static async findByExpedienteAndAbogado(expTribunalANumero, abogadoId) {
         const query = `
