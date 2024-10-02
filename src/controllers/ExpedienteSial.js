@@ -71,8 +71,14 @@ export const uploadAndConvertCsv = async (req, res) => {
       const insertPromises = jsonArray.map(row => {
         const values = {};
         for (const [key, value] of Object.entries(fieldMapping)) {
-          values[key] = key === 'bloquear_gestion_por_estrategia_dual' ? row[value] === '1' : row[value] || null;
-        }
+          if (key === 'bloquear_gestion_por_estrategia_dual') {
+              values[key] = (row[value] === '' || row[value] === undefined) ? null : row[value];
+          } else {
+              values[key] = (row[value] === '' || row[value] === undefined) ? null : row[value];
+          }
+      }
+      
+      
         return CreditoSialDAO.insert(values);
       });
 
