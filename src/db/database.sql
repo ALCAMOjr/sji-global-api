@@ -88,3 +88,21 @@ CREATE TABLE  CreditosSIAL(
   expediente VARCHAR(250),
   juzgado VARCHAR(250)
 );
+
+
+
+CREATE TABLE juzgados (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    juzgado VARCHAR(255),
+    juzext VARCHAR(50),
+    juspos VARCHAR(10)
+);
+
+
+LOAD DATA INFILE '/var/lib/mysql-files/juzgados.csv'
+INTO TABLE juzgados
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS
+(juzgado, juzext, juspos);

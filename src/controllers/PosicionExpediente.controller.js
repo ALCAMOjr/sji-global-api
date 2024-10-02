@@ -97,3 +97,27 @@ export const getPositionExpedientesByFecha = async (req, res) => {
         res.status(500).json({ message: 'Error retrieving expedientes by fecha', error });
     }
 };
+
+export const getPositionExpedienteMultipleFilters = async (req, res) => {
+    try {
+        const { userId } = req;
+        const { desde, hasta, juzgado, etapa, termino, notificacion } = req.query;
+          
+        console.log( desde, hasta, juzgado, etapa, termino, notificacion)
+        if (!desde || !hasta) {
+            return res.status(400).json({ message: 'The "from" and "to" fields are required' });
+        }
+
+        const user = await AbogadoDAO.getById(userId);
+        if (!user || user.user_type !== 'coordinador') {
+            return res.status(403).json({ message: 'No autorizado' });
+        }
+
+        const expedientes = await PositionDao.getFilteredRecords(desde, hasta, juzgado, etapa, termino, notificacion);
+        res.status(200).json({ data: expedientes });
+
+    } catch (error) {
+        console.error('Error retrieving expedientes:', error);
+        res.status(500).json({ message: 'Error retrieving expedientes', error });
+    }
+};

@@ -2,7 +2,6 @@ import jsonwebtoken from 'jsonwebtoken'
 
 
 const abogadoExtractor = (req, res, next) => {
-
     const authorizacion = req.get('authorization')
 
 
