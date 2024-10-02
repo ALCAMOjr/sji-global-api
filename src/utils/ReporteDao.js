@@ -37,7 +37,6 @@ class ReporteDAO {
                     ELSE NULL
                 END AS fecha_formateada  -- Campo adicional para trabajar internamente
             FROM expTribunalDetA etd
-            LEFT JOIN EtapasTv etv ON etd.etapa = etv.etapa AND etd.termino = etv.termino
         ),
         
         ExpTribunalEtapasOrdenadas AS (
@@ -165,7 +164,6 @@ class ReporteDAO {
                     ELSE NULL
                 END AS fecha_formateada  -- Campo adicional para trabajar internamente
             FROM expTribunalDetA etd
-            LEFT JOIN EtapasTv etv ON etd.etapa = etv.etapa AND etd.termino = etv.termino
         ),
         
         ExpTribunalEtapasOrdenadas AS (

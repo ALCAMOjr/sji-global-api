@@ -32,7 +32,7 @@ import  Expediente  from '../models/Expediente.js';
        const [result] = await pool.query('DELETE FROM expTribunalA WHERE numero = ?', [numero]);
        return result;
     }
-    // ExpedienteDAO.js
+  
 static async findAllWithDetails() {
     const query = `
         SELECT 

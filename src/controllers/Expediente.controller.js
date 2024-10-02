@@ -97,7 +97,7 @@ export const createExpediente = async (req, res) => {
 };
 
 
-// Controlador
+
 export const getAllExpedientes = async (req, res) => {
     try {
         const { userId } = req;

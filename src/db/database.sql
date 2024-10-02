@@ -38,6 +38,7 @@ CREATE TABLE expTribunalDetA (
     notificacion VARCHAR(250) NULL,
     expediente VARCHAR(50) NULL,
     expTribunalA_numero BIGINT,
+    format_fecha DATE NULL,
     FOREIGN KEY (expTribunalA_numero) REFERENCES expTribunalA(numero)
 );
 
@@ -87,20 +88,3 @@ CREATE TABLE  CreditosSIAL(
   expediente VARCHAR(250),
   juzgado VARCHAR(250)
 );
-
--- Crear la tabla 'EtapasTv'
-CREATE TABLE EtapasTv (
-    etapa VARCHAR(50) NULL,
-    termino VARCHAR(250) NULL,
-    notificacion VARCHAR(250) NULL,
-    macroetapa VARCHAR(250) NULL
-);
-
-LOAD DATA INFILE '/var/lib/mysql-files/etapasTV.csv'
-INTO TABLE EtapasTv
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"' 
-LINES TERMINATED BY '\n'
-IGNORE 1 LINES
-(etapa, termino, notificacion, macroetapa);
-
