@@ -90,7 +90,7 @@ export const getPositionExpedientesByFecha = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized' });
         }
         const expedientes = await PositionDao.getPositionByFecha(fecha);
-        res.status(200).json({ data: expedientes });
+        res.status(200).json(expedientes);
 
     } catch (error) {
         console.error('Error retrieving expedientes by fecha:', error);
@@ -98,26 +98,48 @@ export const getPositionExpedientesByFecha = async (req, res) => {
     }
 };
 
+export const getPositionExpedientesByJuzgado = async (req, res) => {
+    try {
+        const { userId } = req;
+        const { juzgado } = req.params;
+
+        const user = await AbogadoDAO.getById(userId);
+        if (!user || user.user_type !== 'coordinador') {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+        const expedientes = await PositionDao.getPositionByJuzgado(juzgado);
+  
+        res.status(200).json(expedientes);
+    } catch (error) {
+        console.error('Error retrieving expedientes by juzgado:', error);
+        res.status(500).json({ message: 'Error retrieving expedientes by juzgado', error });
+    }
+};
+
 export const getPositionExpedienteMultipleFilters = async (req, res) => {
     try {
         const { userId } = req;
         const { desde, hasta, juzgado, etapa, termino, notificacion } = req.query;
-          
-        console.log( desde, hasta, juzgado, etapa, termino, notificacion)
+
         if (!desde || !hasta) {
-            return res.status(400).json({ message: 'The "from" and "to" fields are required' });
+            return res.status(400).json({ message: 'The "desde" and "hasta" fields are required' });
+        }
+        const fromDate = new Date(desde);
+        const toDate = new Date(hasta);
+        if (toDate < fromDate) {
+            return res.status(400).json({ message: '"Hasta" date cannot be earlier than "Desde" date' });
         }
 
         const user = await AbogadoDAO.getById(userId);
         if (!user || user.user_type !== 'coordinador') {
-            return res.status(403).json({ message: 'No autorizado' });
+            return res.status(403).json({ message: 'Unauthorized' });
         }
 
         const expedientes = await PositionDao.getFilteredRecords(desde, hasta, juzgado, etapa, termino, notificacion);
-        res.status(200).json({ data: expedientes });
+        res.status(200).json(expedientes);
 
     } catch (error) {
-        console.error('Error retrieving expedientes:', error);
-        res.status(500).json({ message: 'Error retrieving expedientes', error });
+        console.error('Error retrieving records:', error);
+        res.status(500).json({ message: 'Error retrieving records', error });
     }
 };
