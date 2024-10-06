@@ -585,14 +585,13 @@ class PositionDao {
             ExpTribunalEtapas AS (
                 SELECT 
                     etd.expTribunalA_numero,
-                    etd.fecha AS fecha_original,  
+                    etd.fecha AS fecha_original,
                     etd.etapa,
                     etd.termino,
                     etd.notificacion,
                     etd.format_fecha AS fecha_formateada,
-                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC, etd.id ASC) AS row_num  -- Nuevo criterio de ordenación
-            FROM expTribunalDetA etd
-                WHERE etd.etapa = ? AND etd.termino = ? AND etd.notificacion = ?
+                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC, etd.id ASC) AS row_num
+                FROM expTribunalDetA etd
             ),
             Coincidentes AS (
                 SELECT 
@@ -603,11 +602,11 @@ class PositionDao {
                     ce.estatus,
                     ce.bloquear_gestion_por_estrategia_dual,
                     ete.expTribunalA_numero,
-                    ete.fecha_original AS fecha,  
+                    ete.fecha_original AS fecha,
                     ete.etapa,
                     ete.termino,
                     ete.notificacion,
-                    eta.nombre, 
+                    eta.nombre,
                     eta.url,
                     eta.expediente,
                     d.id AS detalle_id,
@@ -622,7 +621,10 @@ class PositionDao {
                 JOIN expTribunalA eta ON ete.expTribunalA_numero = eta.numero
                 LEFT JOIN expTribunalDetA d ON ete.expTribunalA_numero = d.expTribunalA_numero
                 LEFT JOIN juzgados j ON eta.juzgado = j.juzgado
-                WHERE ete.row_num = 1
+                WHERE ete.row_num = 1  -- Seleccionamos solo el último registro
+                AND ete.etapa = ? 
+                AND ete.termino = ? 
+                AND ete.notificacion = ?  -- Aplicar los filtros sobre el último registro
             ),
             NoCoincidentes AS (
                 SELECT 
@@ -654,6 +656,8 @@ class PositionDao {
                 AND etd.termino = ? 
                 AND etd.notificacion = ?
             )
+    
+            -- Seleccionar las columnas finales incluyendo el juzgado
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
@@ -662,11 +666,11 @@ class PositionDao {
                 estatus,
                 bloquear_gestion_por_estrategia_dual,
                 expTribunalA_numero,
-                fecha,  
+                fecha,
                 etapa,
                 termino,
                 notificacion,
-                nombre, 
+                nombre,
                 url,
                 expediente,
                 detalle_id,
@@ -677,9 +681,9 @@ class PositionDao {
                 detalle_notificacion,
                 juzgado
             FROM Coincidentes
-            
+    
             UNION ALL
-            
+    
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
