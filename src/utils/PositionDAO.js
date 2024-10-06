@@ -22,7 +22,7 @@ class PositionDao {
                     etd.termino,
                     etd.notificacion,
                     etd.format_fecha AS fecha_formateada, 
-                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC) AS row_num  
+                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC, etd.id ASC) AS row_num  
                 FROM expTribunalDetA etd
             ),
             Coincidentes AS (
@@ -82,7 +82,7 @@ class PositionDao {
                 LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
                 WHERE etd.expTribunalA_numero IS NULL
             )
-            
+    
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
@@ -106,9 +106,9 @@ class PositionDao {
                 detalle_notificacion,
                 juzgado  
             FROM Coincidentes
-            
+    
             UNION ALL
-            
+    
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
@@ -171,8 +171,6 @@ class PositionDao {
         return Object.values(expedientesMap);
     }
     
-    
-    
     static async getAllbyNumber(number) {
         const [results] = await pool.query(`
             WITH CreditosEtapas AS (
@@ -194,7 +192,7 @@ class PositionDao {
                     etd.termino,
                     etd.notificacion,
                     etd.format_fecha AS fecha_formateada,
-                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC) AS row_num
+                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC, etd.id ASC) AS row_num  
                 FROM expTribunalDetA etd
                 WHERE etd.expTribunalA_numero = ?  
             ),
@@ -286,7 +284,7 @@ class PositionDao {
     
         return results;
     }
-
+    
     static async getAllbyExpediente(expediente) {
         const [results] = await pool.query(`
             WITH CreditosEtapas AS (
