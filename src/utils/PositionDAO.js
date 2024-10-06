@@ -284,7 +284,6 @@ class PositionDao {
     
         return results;
     }
-    
     static async getAllbyExpediente(expediente) {
         const [results] = await pool.query(`
             WITH CreditosEtapas AS (
@@ -296,6 +295,7 @@ class PositionDao {
                     estatus,
                     bloquear_gestion_por_estrategia_dual
                 FROM CreditosSIAL
+                WHERE expediente = ?  -- Filtrar por expediente en CreditosSIAL
             ),
             ExpTribunalEtapas AS (
                 SELECT 
@@ -305,10 +305,10 @@ class PositionDao {
                     etd.termino,
                     etd.notificacion,
                     etd.format_fecha AS fecha_formateada,
-                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC) AS row_num
+                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC, etd.id ASC) AS row_num  -- Nuevo criterio de ordenación
                 FROM expTribunalDetA etd
                 JOIN expTribunalA eta ON etd.expTribunalA_numero = eta.numero  -- Asegurar el JOIN correcto con expTribunalA
-                WHERE etd.expediente = ?  -- Filtrar por expediente
+                WHERE etd.expediente = ?  -- Filtrar por expediente en expTribunalDetA
             ),
             Coincidentes AS (
                 SELECT 
@@ -353,8 +353,9 @@ class PositionDao {
                 FROM CreditosSIAL c
                 LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
                 WHERE etd.expTribunalA_numero IS NULL
+                AND c.expediente = ?  -- Filtrar por expediente en CreditosSIAL
             )
-            
+    
             -- Seleccionar las columnas finales incluyendo el juzgado
             SELECT 
                 num_credito,
@@ -392,13 +393,12 @@ class PositionDao {
                 url,
                 expediente,
                 juzgado  -- Incluir la abreviatura del juzgado en el resultado
-            FROM NoCoincidentes
-            WHERE expediente IS not NULL;
-          `, [expediente]);    
-
-          return results;
-        }
-
+            FROM NoCoincidentes;
+        `, [expediente, expediente, expediente]);
+    
+        return results;
+    }
+    
     static async getAllByMacroetapa(macroetapa) {
         const [results] = await pool.query(`
             WITH CreditosEtapas AS (
@@ -407,20 +407,20 @@ class PositionDao {
                     ultima_etapa_aprobada,
                     fecha_ultima_etapa_aprobada,
                     macroetapa_aprobada,
-                    estatus,  -- Añadir estatus
-                    bloquear_gestion_por_estrategia_dual  -- Añadir bloquear_gestion_por_estrategia_dual
+                    estatus,
+                    bloquear_gestion_por_estrategia_dual
                 FROM CreditosSIAL
                 WHERE macroetapa_aprobada = ?  -- Filtrar por la macroetapa específica
             ),
             ExpTribunalEtapas AS (
                 SELECT 
                     etd.expTribunalA_numero,
-                    etd.fecha AS fecha_original,  
+                    etd.fecha AS fecha_original,
                     etd.etapa,
                     etd.termino,
                     etd.notificacion,
-                    etd.format_fecha AS fecha_formateada, 
-                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC) AS row_num  
+                    etd.format_fecha AS fecha_formateada,
+                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC, etd.id ASC) AS row_num  -- Nuevo criterio de ordenación
                 FROM expTribunalDetA etd
             ),
             Coincidentes AS (
@@ -429,28 +429,28 @@ class PositionDao {
                     ce.ultima_etapa_aprobada,
                     ce.fecha_ultima_etapa_aprobada,
                     ce.macroetapa_aprobada,
-                    ce.estatus,  -- Añadir estatus
-                    ce.bloquear_gestion_por_estrategia_dual,  -- Añadir bloquear_gestion_por_estrategia_dual
+                    ce.estatus,
+                    ce.bloquear_gestion_por_estrategia_dual,
                     ete.expTribunalA_numero,
-                    ete.fecha_original AS fecha,  
+                    ete.fecha_original AS fecha,
                     ete.etapa,
                     ete.termino,
                     ete.notificacion,
-                    eta.nombre, 
+                    eta.nombre,
                     eta.url,
-                    eta.expediente,  -- Añadir expediente
+                    eta.expediente,
                     d.id AS detalle_id,
                     d.ver_acuerdo,
                     d.fecha AS detalle_fecha,
                     d.etapa AS detalle_etapa,
                     d.termino AS detalle_termino,
                     d.notificacion AS detalle_notificacion,
-                    j.juspos AS juzgado  -- Agregar el campo juzgado desde la tabla 'juzgados'
+                    j.juspos AS juzgado  -- Unir con la tabla 'juzgados'
                 FROM CreditosEtapas ce
                 JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
                 JOIN expTribunalA eta ON ete.expTribunalA_numero = eta.numero
-                LEFT JOIN expTribunalDetA d ON ete.expTribunalA_numero = d.expTribunalA_numero  
-                LEFT JOIN juzgados j ON eta.juzgado = j.juzgado  -- Unir con la tabla 'juzgados' para obtener la abreviatura
+                LEFT JOIN expTribunalDetA d ON ete.expTribunalA_numero = d.expTribunalA_numero
+                LEFT JOIN juzgados j ON eta.juzgado = j.juzgado  -- Unir con la tabla 'juzgados'
                 WHERE ete.row_num = 1
             ),
             NoCoincidentes AS (
@@ -459,44 +459,45 @@ class PositionDao {
                     c.ultima_etapa_aprobada,
                     c.fecha_ultima_etapa_aprobada,
                     c.macroetapa_aprobada,
-                    c.estatus,  -- Añadir estatus
-                    c.bloquear_gestion_por_estrategia_dual,  -- Añadir bloquear_gestion_por_estrategia_dual
+                    c.estatus,
+                    c.bloquear_gestion_por_estrategia_dual,
                     NULL AS expTribunalA_numero,
                     NULL AS fecha,
                     NULL AS etapa,
                     NULL AS termino,
                     NULL AS notificacion,
-                    NULL AS nombre, 
+                    NULL AS nombre,
                     NULL AS url,
-                    NULL AS expediente,  -- Añadir expediente
+                    NULL AS expediente,
                     NULL AS detalle_id,
                     NULL AS ver_acuerdo,
                     NULL AS detalle_fecha,
                     NULL AS detalle_etapa,
                     NULL AS detalle_termino,
                     NULL AS detalle_notificacion,
-                    NULL AS juzgado  -- Mantener nulo si no hay coincidencia
+                    NULL AS juzgado
                 FROM CreditosSIAL c
                 LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
                 WHERE etd.expTribunalA_numero IS NULL
                 AND c.macroetapa_aprobada = ?  -- Filtrar por la macroetapa específica
             )
-            
+    
+            -- Seleccionar las columnas finales incluyendo el juzgado
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
                 fecha_ultima_etapa_aprobada,
                 macroetapa_aprobada,
-                estatus,  -- Añadir estatus
-                bloquear_gestion_por_estrategia_dual,  -- Añadir bloquear_gestion_por_estrategia_dual
+                estatus,
+                bloquear_gestion_por_estrategia_dual,
                 expTribunalA_numero,
-                fecha,  
+                fecha,
                 etapa,
                 termino,
                 notificacion,
-                nombre, 
+                nombre,
                 url,
-                expediente,  -- Añadir expediente
+                expediente,
                 detalle_id,
                 ver_acuerdo,
                 detalle_fecha,
@@ -505,16 +506,16 @@ class PositionDao {
                 detalle_notificacion,
                 juzgado  -- Incluir la abreviatura del juzgado en el resultado
             FROM Coincidentes
-            
+    
             UNION ALL
-            
+    
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
                 fecha_ultima_etapa_aprobada,
                 macroetapa_aprobada,
-                estatus,  -- Añadir estatus
-                bloquear_gestion_por_estrategia_dual,  -- Añadir bloquear_gestion_por_estrategia_dual
+                estatus,
+                bloquear_gestion_por_estrategia_dual,
                 expTribunalA_numero,
                 fecha,
                 etapa,
@@ -522,7 +523,7 @@ class PositionDao {
                 notificacion,
                 nombre,
                 url,
-                expediente,  -- Añadir expediente
+                expediente,
                 detalle_id,
                 ver_acuerdo,
                 detalle_fecha,
@@ -540,10 +541,10 @@ class PositionDao {
                     ultima_etapa_aprobada: row.ultima_etapa_aprobada,
                     fecha_ultima_etapa_aprobada: row.fecha_ultima_etapa_aprobada,
                     macroetapa_aprobada: row.macroetapa_aprobada,
-                    estatus: row.estatus, 
-                    bloquear_gestion_por_estrategia_dual: row.bloquear_gestion_por_estrategia_dual,  
+                    estatus: row.estatus,
+                    bloquear_gestion_por_estrategia_dual: row.bloquear_gestion_por_estrategia_dual,
                     expTribunalA_numero: row.expTribunalA_numero,
-                    expediente: row.expediente, 
+                    expediente: row.expediente,
                     fecha: row.fecha,
                     etapa: row.etapa,
                     termino: row.termino,
@@ -570,7 +571,6 @@ class PositionDao {
         return Object.values(expedientesMap);
     }
     
-    
     static async getAllByEtapa(etapa, termino, notificacion) {
         const [results] = await pool.query(`
             WITH CreditosEtapas AS (
@@ -579,21 +579,20 @@ class PositionDao {
                     ultima_etapa_aprobada,
                     fecha_ultima_etapa_aprobada,
                     macroetapa_aprobada,
-                    estatus,  -- Añadir el campo estatus
-                    bloquear_gestion_por_estrategia_dual  -- Añadir el campo bloquear_gestion_por_estrategia_dual
+                    estatus,
+                    bloquear_gestion_por_estrategia_dual
                 FROM CreditosSIAL
             ),
             ExpTribunalEtapas AS (
                 SELECT 
                     etd.expTribunalA_numero,
-                    etd.fecha AS fecha_original,  
+                    etd.fecha AS fecha_original,
                     etd.etapa,
                     etd.termino,
                     etd.notificacion,
                     etd.format_fecha AS fecha_formateada,
-                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC) AS row_num
+                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC, etd.id ASC) AS row_num  -- Nuevo criterio de ordenación
                 FROM expTribunalDetA etd
-                WHERE etd.etapa = ? AND etd.termino = ? AND etd.notificacion = ?
             ),
             Coincidentes AS (
                 SELECT 
@@ -601,29 +600,30 @@ class PositionDao {
                     ce.ultima_etapa_aprobada,
                     ce.fecha_ultima_etapa_aprobada,
                     ce.macroetapa_aprobada,
-                    ce.estatus,  -- Añadir estatus
-                    ce.bloquear_gestion_por_estrategia_dual,  -- Añadir bloquear_gestion_por_estrategia_dual
+                    ce.estatus,
+                    ce.bloquear_gestion_por_estrategia_dual,
                     ete.expTribunalA_numero,
-                    ete.fecha_original AS fecha,  
+                    ete.fecha_original AS fecha,
                     ete.etapa,
                     ete.termino,
                     ete.notificacion,
-                    eta.nombre, 
+                    eta.nombre,
                     eta.url,
-                    eta.expediente,  -- Añadir expediente
+                    eta.expediente,
                     d.id AS detalle_id,
                     d.ver_acuerdo,
                     d.fecha AS detalle_fecha,
                     d.etapa AS detalle_etapa,
                     d.termino AS detalle_termino,
                     d.notificacion AS detalle_notificacion,
-                    j.juspos AS juzgado  -- Añadir el campo juzgado desde la tabla 'juzgados'
+                    j.juspos AS juzgado
                 FROM CreditosEtapas ce
                 JOIN ExpTribunalEtapas ete ON ce.num_credito = ete.expTribunalA_numero
                 JOIN expTribunalA eta ON ete.expTribunalA_numero = eta.numero
                 LEFT JOIN expTribunalDetA d ON ete.expTribunalA_numero = d.expTribunalA_numero
-                LEFT JOIN juzgados j ON eta.juzgado = j.juzgado  -- Unir con la tabla 'juzgados' para obtener la abreviatura
+                LEFT JOIN juzgados j ON eta.juzgado = j.juzgado
                 WHERE ete.row_num = 1
+                AND ete.etapa = ? AND ete.termino = ? AND ete.notificacion = ?  -- Filtrar SOLO en el último registro
             ),
             NoCoincidentes AS (
                 SELECT 
@@ -631,8 +631,8 @@ class PositionDao {
                     c.ultima_etapa_aprobada,
                     c.fecha_ultima_etapa_aprobada,
                     c.macroetapa_aprobada,
-                    c.estatus,  -- Añadir estatus
-                    c.bloquear_gestion_por_estrategia_dual,  -- Añadir bloquear_gestion_por_estrategia_dual
+                    c.estatus,
+                    c.bloquear_gestion_por_estrategia_dual,
                     NULL AS expTribunalA_numero,
                     NULL AS fecha,
                     NULL AS etapa,
@@ -640,55 +640,27 @@ class PositionDao {
                     NULL AS notificacion,
                     NULL AS nombre,
                     NULL AS url,
-                    NULL AS expediente,  -- Añadir expediente
+                    NULL AS expediente,
                     NULL AS detalle_id,
                     NULL AS ver_acuerdo,
                     NULL AS detalle_fecha,
                     NULL AS detalle_etapa,
                     NULL AS detalle_termino,
                     NULL AS detalle_notificacion,
-                    NULL AS juzgado  -- Mantener nulo si no hay coincidencia
+                    NULL AS juzgado
                 FROM CreditosSIAL c
                 LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
                 WHERE etd.expTribunalA_numero IS NULL
-                AND etd.etapa = ? 
-                AND etd.termino = ? 
-                AND etd.notificacion = ?
             )
-            
+    
+            -- Seleccionar las columnas finales incluyendo el juzgado
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
                 fecha_ultima_etapa_aprobada,
                 macroetapa_aprobada,
-                estatus,  -- Añadir estatus
-                bloquear_gestion_por_estrategia_dual,  -- Añadir bloquear_gestion_por_estrategia_dual
-                expTribunalA_numero,
-                fecha,  
-                etapa,
-                termino,
-                notificacion,
-                nombre, 
-                url,
-                expediente,  -- Añadir expediente
-                detalle_id,
-                ver_acuerdo,
-                detalle_fecha,
-                detalle_etapa,
-                detalle_termino,
-                detalle_notificacion,
-                juzgado  -- Incluir el campo juzgado en el resultado
-            FROM Coincidentes
-            
-            UNION ALL
-            
-            SELECT 
-                num_credito,
-                ultima_etapa_aprobada,
-                fecha_ultima_etapa_aprobada,
-                macroetapa_aprobada,
-                estatus,  -- Añadir estatus
-                bloquear_gestion_por_estrategia_dual,  -- Añadir bloquear_gestion_por_estrategia_dual
+                estatus,
+                bloquear_gestion_por_estrategia_dual,
                 expTribunalA_numero,
                 fecha,
                 etapa,
@@ -696,16 +668,42 @@ class PositionDao {
                 notificacion,
                 nombre,
                 url,
-                expediente,  -- Añadir expediente
+                expediente,
                 detalle_id,
                 ver_acuerdo,
                 detalle_fecha,
                 detalle_etapa,
                 detalle_termino,
                 detalle_notificacion,
-                juzgado  -- Incluir el campo juzgado en el resultado
+                juzgado
+            FROM Coincidentes
+    
+            UNION ALL
+    
+            SELECT 
+                num_credito,
+                ultima_etapa_aprobada,
+                fecha_ultima_etapa_aprobada,
+                macroetapa_aprobada,
+                estatus,
+                bloquear_gestion_por_estrategia_dual,
+                expTribunalA_numero,
+                fecha,
+                etapa,
+                termino,
+                notificacion,
+                nombre,
+                url,
+                expediente,
+                detalle_id,
+                ver_acuerdo,
+                detalle_fecha,
+                detalle_etapa,
+                detalle_termino,
+                detalle_notificacion,
+                juzgado
             FROM NoCoincidentes;
-        `, [etapa, termino, notificacion, etapa, termino, notificacion]);
+        `, [etapa, termino, notificacion]);
     
         const expedientesMap = results.reduce((map, row) => {
             if (!map[row.num_credito]) {
@@ -714,17 +712,17 @@ class PositionDao {
                     ultima_etapa_aprobada: row.ultima_etapa_aprobada,
                     fecha_ultima_etapa_aprobada: row.fecha_ultima_etapa_aprobada,
                     macroetapa_aprobada: row.macroetapa_aprobada,
-                    estatus: row.estatus, 
-                    bloquear_gestion_por_estrategia_dual: row.bloquear_gestion_por_estrategia_dual,  
+                    estatus: row.estatus,
+                    bloquear_gestion_por_estrategia_dual: row.bloquear_gestion_por_estrategia_dual,
                     expTribunalA_numero: row.expTribunalA_numero,
-                    expediente: row.expediente, 
+                    expediente: row.expediente,
                     fecha: row.fecha,
                     etapa: row.etapa,
                     termino: row.termino,
                     notificacion: row.notificacion,
                     nombre: row.nombre,
                     url: row.url,
-                    juzgado: row.juzgado,  
+                    juzgado: row.juzgado,
                     detalles: []
                 };
             }
@@ -743,6 +741,7 @@ class PositionDao {
     
         return Object.values(expedientesMap);
     }
+    
     
     static async getPositionByFecha(fecha) {
         const [results] = await pool.query(`
