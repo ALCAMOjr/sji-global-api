@@ -55,7 +55,10 @@ export const getPositionExpedienteByExpediente = async (req, res) => {
             return res.status(403).send({ error: 'Unauthorized' });
         }
 
+
         const expedientes = await PositionDao.getAllbyExpediente(expediente);
+
+
 
         const resultsWithDetails = await Promise.all(expedientes.map(async expediente => {
             const detalles = await ExpedienteDetalleDAO.findByExpTribunalANumero(expediente.num_credito);
@@ -64,6 +67,7 @@ export const getPositionExpedienteByExpediente = async (req, res) => {
                 detalles
             };
         }));
+
 
         res.status(200).json(resultsWithDetails);
 
@@ -96,11 +100,13 @@ export const getPositionExpedienteByFiltros = async (req, res) => {
         const { userId } = req;
         const { etapa, termino, notificacion } = req.query;
 
+
         const user = await AbogadoDAO.getById(userId);
         if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
         }
         const expedientes = await PositionDao.getAllByEtapa(etapa, termino, notificacion);
+      
         res.status(200).json(expedientes);
 
     } catch (error) {

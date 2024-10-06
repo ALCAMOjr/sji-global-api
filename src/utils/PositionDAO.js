@@ -295,7 +295,6 @@ class PositionDao {
                     estatus,
                     bloquear_gestion_por_estrategia_dual
                 FROM CreditosSIAL
-                WHERE expediente = ?  -- Filtrar por expediente en CreditosSIAL
             ),
             ExpTribunalEtapas AS (
                 SELECT 
@@ -394,7 +393,7 @@ class PositionDao {
                 expediente,
                 juzgado  -- Incluir la abreviatura del juzgado en el resultado
             FROM NoCoincidentes;
-        `, [expediente, expediente, expediente]);
+        `, [expediente, expediente]);
     
         return results;
     }
@@ -586,13 +585,14 @@ class PositionDao {
             ExpTribunalEtapas AS (
                 SELECT 
                     etd.expTribunalA_numero,
-                    etd.fecha AS fecha_original,
+                    etd.fecha AS fecha_original,  
                     etd.etapa,
                     etd.termino,
                     etd.notificacion,
                     etd.format_fecha AS fecha_formateada,
                     ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC, etd.id ASC) AS row_num  -- Nuevo criterio de ordenación
-                FROM expTribunalDetA etd
+            FROM expTribunalDetA etd
+                WHERE etd.etapa = ? AND etd.termino = ? AND etd.notificacion = ?
             ),
             Coincidentes AS (
                 SELECT 
@@ -603,11 +603,11 @@ class PositionDao {
                     ce.estatus,
                     ce.bloquear_gestion_por_estrategia_dual,
                     ete.expTribunalA_numero,
-                    ete.fecha_original AS fecha,
+                    ete.fecha_original AS fecha,  
                     ete.etapa,
                     ete.termino,
                     ete.notificacion,
-                    eta.nombre,
+                    eta.nombre, 
                     eta.url,
                     eta.expediente,
                     d.id AS detalle_id,
@@ -623,7 +623,6 @@ class PositionDao {
                 LEFT JOIN expTribunalDetA d ON ete.expTribunalA_numero = d.expTribunalA_numero
                 LEFT JOIN juzgados j ON eta.juzgado = j.juzgado
                 WHERE ete.row_num = 1
-                AND ete.etapa = ? AND ete.termino = ? AND ete.notificacion = ?  -- Filtrar SOLO en el último registro
             ),
             NoCoincidentes AS (
                 SELECT 
@@ -651,9 +650,10 @@ class PositionDao {
                 FROM CreditosSIAL c
                 LEFT JOIN expTribunalDetA etd ON c.num_credito = etd.expTribunalA_numero
                 WHERE etd.expTribunalA_numero IS NULL
+                AND etd.etapa = ? 
+                AND etd.termino = ? 
+                AND etd.notificacion = ?
             )
-    
-            -- Seleccionar las columnas finales incluyendo el juzgado
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
@@ -662,11 +662,11 @@ class PositionDao {
                 estatus,
                 bloquear_gestion_por_estrategia_dual,
                 expTribunalA_numero,
-                fecha,
+                fecha,  
                 etapa,
                 termino,
                 notificacion,
-                nombre,
+                nombre, 
                 url,
                 expediente,
                 detalle_id,
@@ -677,9 +677,9 @@ class PositionDao {
                 detalle_notificacion,
                 juzgado
             FROM Coincidentes
-    
+            
             UNION ALL
-    
+            
             SELECT 
                 num_credito,
                 ultima_etapa_aprobada,
@@ -703,8 +703,8 @@ class PositionDao {
                 detalle_notificacion,
                 juzgado
             FROM NoCoincidentes;
-        `, [etapa, termino, notificacion]);
-    
+        `, [etapa, termino, notificacion, etapa, termino, notificacion]);
+        
         const expedientesMap = results.reduce((map, row) => {
             if (!map[row.num_credito]) {
                 map[row.num_credito] = {
