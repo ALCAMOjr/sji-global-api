@@ -1110,7 +1110,6 @@ class PositionDao {
     }
     
     
-    
     static async getFilteredRecords(desde, hasta, juzgado, etapa, termino, notificacion) {
         let query = `
             WITH CreditosEtapas AS (
@@ -1125,6 +1124,7 @@ class PositionDao {
             ),
             
             ExpTribunalEtapas AS (
+                -- Criterio de ordenación en format_fecha DESC, id ASC para obtener el último registro
                 SELECT 
                     etd.expTribunalA_numero,
                     etd.fecha AS fecha_original,
@@ -1132,7 +1132,7 @@ class PositionDao {
                     etd.termino,
                     etd.notificacion,
                     etd.format_fecha AS fecha_formateada,  
-                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC) AS row_num  
+                    ROW_NUMBER() OVER (PARTITION BY etd.expTribunalA_numero ORDER BY etd.format_fecha DESC, etd.id ASC) AS row_num  
                 FROM expTribunalDetA etd
                 WHERE etd.format_fecha BETWEEN ? AND ?
             ),
@@ -1165,7 +1165,7 @@ class PositionDao {
                 JOIN expTribunalA eta ON ete.expTribunalA_numero = eta.numero
                 LEFT JOIN expTribunalDetA d ON ete.expTribunalA_numero = d.expTribunalA_numero  
                 LEFT JOIN juzgados j ON eta.juzgado = j.juzgado
-                WHERE ete.row_num = 1
+                WHERE ete.row_num = 1  -- Solo el último registro por expediente
         `;
         
         let params = [desde, hasta];
@@ -1221,7 +1221,6 @@ class PositionDao {
                 AND etd.format_fecha BETWEEN ? AND ?
         `;
     
-     
         params.push(desde, hasta); 
     
         if (juzgado) {
@@ -1294,7 +1293,7 @@ class PositionDao {
                 detalle_notificacion
             FROM NoCoincidentes;
         `;
-
+    
         const [results] = await pool.query(query, params);
     
         const expedientesMap = results.reduce((map, row) => {
@@ -1330,9 +1329,10 @@ class PositionDao {
             }
             return map;
         }, {});
-    
+        
         return Object.values(expedientesMap);
     }
+    
     
 }
 
