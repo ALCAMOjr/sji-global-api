@@ -125,7 +125,6 @@ export const getPositionExpedientesByFecha = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized' });
         }
         const expedientes = await PositionDao.getPositionByFecha(fecha);
-        console.log(expedientes)
         res.status(200).json(expedientes);
 
     } catch (error) {

@@ -94,15 +94,20 @@ CREATE TABLE  CreditosSIAL(
 CREATE TABLE juzgados (
     id INT AUTO_INCREMENT PRIMARY KEY,
     juzgado VARCHAR(255),
-    juzext VARCHAR(50),
-    juspos VARCHAR(10)
+    juspos VARCHAR(10),
+    abreviaciones VARCHAR(255),
+    busqueda VARCHAR(50),
+    selMatCom VARCHAR(50),
+    selJuzCom VARCHAR(50),
+    SelMatPro VARCHAR(50)
 );
 
-
-LOAD DATA INFILE '/var/lib/mysql-files/juzgados.csv'
+drop table juzgados;
+LOAD DATA INFILE '/var/lib/mysql-files/Cleaned_Juzgados_Data.csv'
 INTO TABLE juzgados
 FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
+OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
-IGNORE 1 ROWS
-(juzgado, juzext, juspos);
+IGNORE 1 LINES
+(juzgado, juspos, abreviaciones, busqueda, selMatCom, selJuzCom, SelMatPro);
+
