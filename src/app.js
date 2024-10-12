@@ -6,6 +6,7 @@ import ExpedienteSialRouter from "./routes/ExpedienteSial.routes.js"
 import PositionRouter from "./routes/PosicionExpediente.routes.js"
 import ReporteRouter from "./routes/Reporte.routes.js"
 import JuzgadoRouter from "./routes/Juzgado.routes.js"
+import FiltrosRouter from "./routes/Filtros.routes.js"
 import cors from "cors";
 const app = express()
 
@@ -19,5 +20,5 @@ app.use('/api', PositionRouter)
 app.use('/api', ReporteRouter)
 app.use('/api', TareasRoutes)
 app.use('/api', JuzgadoRouter)
-
+app.use('/api', FiltrosRouter)
 export { app };

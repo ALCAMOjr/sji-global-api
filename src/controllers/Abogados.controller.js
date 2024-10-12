@@ -24,15 +24,13 @@ export const getAllAbogados = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while getting the abogados' });
     }
 };
-
 export const login = async (req, res) => {
     try {
         const { username, password } = req.body;
         if (!username || !password) {
             return res.status(400).send({ error: 'Missing username or password' });
         }
-
-        const user = await AbogadoDAO.getByUsername(username);
+        const user = await AbogadoDAO.getByUsernameOrEmail(username);
         if (!user) {
             return res.status(400).send({ error: 'Invalid username or password' });
         }
@@ -60,6 +58,7 @@ export const login = async (req, res) => {
         res.status(500).send({ error: 'An error occurred during login' });
     }
 };
+
 export const registerUser = async (req, res) => {
     try {
         const { username, userType, nombre, apellido, cedula, email, telefono } = req.body;

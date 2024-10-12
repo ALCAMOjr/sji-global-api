@@ -22,6 +22,15 @@ class AbogadoDAO {
         return rows.length ? new Abogado(rows[0]) : null;
     }
 
+    static async getByUsernameOrEmail(usernameOrEmail) {
+        const [rows] = await pool.query(
+            'SELECT * FROM abogados WHERE username = ? OR email = ?',
+            [usernameOrEmail, usernameOrEmail]
+        );
+        return rows.length ? new Abogado(rows[0]) : null;
+    }
+
+    
     static async create(abogadoData) {
         const { username, password, nombre, apellido, cedula, email, telefono, userType } = abogadoData;
         const [result] = await pool.query(
