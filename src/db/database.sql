@@ -139,12 +139,52 @@ CREATE TABLE Demandas (
   JUZGADO VARCHAR(255),
   HORA_REQUERIMIENTO TIME,
   FECHA_REQUERIMIENTO DATE,
+  
+  -- Campos para el tipo de demanda
   TIPO_DEMANDA ENUM('Individual', 'Con consentimiento', 'Conyugal') NOT NULL,
   SUBTIPO ENUM('Pesos', 'VSMM') NULL,
   CATEGORIA ENUM('Demanda', 'Demandado') NULL,
+  
+  -- Referencia a la tabla templates_demandas
+  template_id INT,
+  
+  -- Restricción para asegurar consistencia entre TIPO_DEMANDA y subtipos
+  CHECK (
+    (TIPO_DEMANDA = 'Individual' AND SUBTIPO IS NOT NULL AND CATEGORIA IS NOT NULL) OR
+    (TIPO_DEMANDA = 'Con consentimiento' AND SUBTIPO IS NOT NULL AND CATEGORIA IS NOT NULL) OR
+    (TIPO_DEMANDA = 'Conyugal' AND SUBTIPO IS NULL AND CATEGORIA IS NULL)
+  ),
+  
+  -- Clave foránea para asociar un template
+  FOREIGN KEY (template_id) REFERENCES templates_demandas (template_id) ON DELETE SET NULL
+);
+
+
+CREATE TABLE templates_demandas (
+  template_id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre_template VARCHAR(255) NOT NULL,
+  
+  -- Campos de referencia para identificar el tipo de demanda del template
+  TIPO_DEMANDA ENUM('Individual', 'Con consentimiento', 'Conyugal') NOT NULL,
+  SUBTIPO ENUM('Pesos', 'VSMM') NULL,
+  CATEGORIA ENUM('Demanda', 'Demandado') NULL,
+  
+  -- Restricción para asegurar consistencia en las combinaciones de demanda
   CHECK (
     (TIPO_DEMANDA = 'Individual' AND SUBTIPO IS NOT NULL AND CATEGORIA IS NOT NULL) OR
     (TIPO_DEMANDA = 'Con consentimiento' AND SUBTIPO IS NOT NULL AND CATEGORIA IS NOT NULL) OR
     (TIPO_DEMANDA = 'Conyugal' AND SUBTIPO IS NULL AND CATEGORIA IS NULL)
   )
+);
+
+
+
+CREATE TABLE demandas_pages (
+  page_id INT AUTO_INCREMENT PRIMARY KEY,
+  template_id INT NOT NULL,
+  numero_pagina INT NOT NULL,
+  contenido TEXT NOT NULL,
+  
+  -- Clave foránea para relacionar la página con el template
+  FOREIGN KEY (template_id) REFERENCES templates_demandas (template_id) ON DELETE CASCADE
 );

@@ -1,4 +1,4 @@
-import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz';
 
 export const generateWelcomeEmail = (nombre, username, password) => {
     const subject = 'Bienvenido';
@@ -20,8 +20,7 @@ export const generateTaskCompletionEmail = (user, taskId) => {
 
 export const getMexicoCityDate = (date) => {
     const timeZone = 'America/Mexico_City';
-    const zonedDate = toZonedTime(date, timeZone);
-    return formatInTimeZone(zonedDate, timeZone, 'yyyy-MM-dd');
+    return formatInTimeZone(date, timeZone, 'yyyy-MM-dd');
 };
 
 export const generateEmailContentScrapingFailUser = (errorMessage) => {
