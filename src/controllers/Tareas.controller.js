@@ -40,13 +40,7 @@ export const createTask = async (req, res) => {
         if (activeTask) {
             return res.status(400).send({ error: 'There is already an active task assigned to this expediente.' });
         }
-
-       
-
         const fecha_registro = getMexicoCityDate(new Date());
-
-        
-        console.log(fecha_entrega, fecha_registro);
         const nuevaTarea = new Tarea({
             abogado_id,
             exptribunalA_numero,
