@@ -68,6 +68,11 @@ export const registerUser = async (req, res) => {
             return res.status(400).send({ error: 'Username and email are required' });
         }
 
+
+        if (process.env.NODE_ENV === "production" && !email.endsWith("@sjiglobal.com")) {
+            return res.status(400).send({ error: 'Email must end with @sjiglobal.com in production environment' });
+        }
+
         const user = await AbogadoDAO.getById(userId);
         if (!user || user.user_type !== 'coordinador') {
             return res.status(403).send({ error: 'Unauthorized' });
