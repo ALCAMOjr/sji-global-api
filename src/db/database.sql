@@ -2,7 +2,7 @@ CREATE DATABASE railway;
 
 USE railway;
 
--- Crear la tabla 'abogados'
+-- Tabla 'abogados': Almacena información sobre los abogados, como sus credenciales, detalles de contacto y tipo de usuario.
 CREATE TABLE abogados (
     id INT NOT NULL AUTO_INCREMENT,
     username VARCHAR(45) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE abogados (
     PRIMARY KEY (id)
 );
 
--- Crear la tabla 'expTribunalA' con 'numero' como clave primaria
+-- Tabla 'expTribunalA': Almacena datos sobre expedientes del Tribunal A, con 'numero' como clave primaria.
 CREATE TABLE expTribunalA (
     numero BIGINT NOT NULL PRIMARY KEY,
     nombre VARCHAR(255),
@@ -28,7 +28,7 @@ CREATE TABLE expTribunalA (
     partes TEXT
 );
 
--- Crear la tabla 'expTribunalDetA' con referencia a 'expTribunalA'
+-- Tabla 'expTribunalDetA': Almacena detalles adicionales de los expedientes del Tribunal A, con relación a 'expTribunalA'.
 CREATE TABLE expTribunalDetA (
     id INT AUTO_INCREMENT PRIMARY KEY,
     ver_acuerdo VARCHAR(50) NULL,
@@ -42,7 +42,7 @@ CREATE TABLE expTribunalDetA (
     FOREIGN KEY (expTribunalA_numero) REFERENCES expTribunalA(numero)
 );
 
--- Crear la tabla 'Tareas' con referencia a 'expTribunalA'
+-- Tabla 'Tareas': Almacena tareas asignadas a abogados, relacionadas con los expedientes del Tribunal A.
 CREATE TABLE Tareas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     abogado_id INT,
@@ -60,8 +60,7 @@ CREATE TABLE Tareas (
     FOREIGN KEY (exptribunalA_numero) REFERENCES expTribunalA(numero)
 );
 
-
--- Crear la tabla 'CreditosSIAL'
+-- Tabla 'CreditosSIAL': Almacena información sobre créditos en el sistema SIAL, incluyendo detalles del estado y ubicación.
 CREATE TABLE  CreditosSIAL(
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   num_credito BIGINT NOT NULL,
@@ -89,8 +88,7 @@ CREATE TABLE  CreditosSIAL(
   juzgado VARCHAR(250)
 );
 
-
-
+-- Tabla 'juzgados': Almacena información sobre juzgados, incluyendo abreviaturas y detalles de ubicación.
 CREATE TABLE juzgados (
     id INT AUTO_INCREMENT PRIMARY KEY,
     juzgado VARCHAR(255),
@@ -102,6 +100,7 @@ CREATE TABLE juzgados (
     SelMatPro VARCHAR(50)
 );
 
+-- Tabla 'Filtros': Contiene filtros definidos para la búsqueda de términos, notificaciones, y etapas en el proceso.
 CREATE TABLE Filtros (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255),
@@ -110,81 +109,92 @@ CREATE TABLE Filtros (
     notificacion VARCHAR(255)
 );
 
-
+-- Tabla 'Demandas': Tabla principal que almacena los datos comunes de todas las demandas, independientemente de su tipo.
 CREATE TABLE Demandas (
-  CREDITO BIGINT NOT NULL PRIMARY KEY,
-  ACREDITADO VARCHAR(255) NOT NULL,
-  ESCRITURA VARCHAR(255),
-  FECHA_ESCRITURA DATE,
-  INSCRIPCION VARCHAR(255),
-  VOLUMEN INT,
-  LIBRO VARCHAR(255),
-  SECCION VARCHAR(255),
-  UNIDAD VARCHAR(255),
-  FECHA DATE,
-  MONTO_OTORGADO DECIMAL(15, 2),
-  MES_PRIMER_ADEUDO VARCHAR(50),
-  MES_ULTIMO_ADEUDO VARCHAR(50),
-  ADEUDO_EN_PESOS DECIMAL(15, 2),
-  ADEUDO DECIMAL(15, 2),
-  CALLE VARCHAR(255),
-  NUMERO VARCHAR(50),
-  COLONIA_FRACCIONAMIENTO VARCHAR(255),
-  CODIGO_POSTAL VARCHAR(10),
-  MUNICIPIO VARCHAR(255),
-  ESTADO VARCHAR(255),
-  NOMENCLATURA VARCHAR(255),
-  INTERES_ORDINARIO DECIMAL(5, 2),
-  INTERES_MORATORIO DECIMAL(5, 2),
-  JUZGADO VARCHAR(255),
-  HORA_REQUERIMIENTO TIME,
-  FECHA_REQUERIMIENTO DATE,
-  
-  -- Campos para el tipo de demanda
-  TIPO_DEMANDA ENUM('Individual', 'Con consentimiento', 'Conyugal') NOT NULL,
-  SUBTIPO ENUM('Pesos', 'VSMM') NULL,
-  CATEGORIA ENUM('Demanda', 'Demandado') NULL,
-  
-  -- Referencia a la tabla templates_demandas
-  template_id INT,
-  
-  -- Restricción para asegurar consistencia entre TIPO_DEMANDA y subtipos
-  CHECK (
-    (TIPO_DEMANDA = 'Individual' AND SUBTIPO IS NOT NULL AND CATEGORIA IS NOT NULL) OR
-    (TIPO_DEMANDA = 'Con consentimiento' AND SUBTIPO IS NOT NULL AND CATEGORIA IS NOT NULL) OR
-    (TIPO_DEMANDA = 'Conyugal' AND SUBTIPO IS NULL AND CATEGORIA IS NULL)
-  ),
-  
-  -- Clave foránea para asociar un template
-  FOREIGN KEY (template_id) REFERENCES templates_demandas (template_id) ON DELETE SET NULL
+  Credito BIGINT NOT NULL PRIMARY KEY CHECK (CHAR_LENGTH(Credito) = 9),
+  Tipo_demanda ENUM('Individual', 'Con consentimiento', 'Conyugal') NOT NULL,
+  Template_id INT,
+  Acreditado VARCHAR(255),
+  Fecha DATE,
+  Calle VARCHAR(255),
+  Numero VARCHAR(50),
+  Colonia_fraccionamiento VARCHAR(255),
+  Codigo_postal VARCHAR(10),
+  Municipio VARCHAR(255),
+  Estado VARCHAR(255),
+  FOREIGN KEY (Template_id) REFERENCES templates_demandas (template_id) ON DELETE SET NULL
 );
 
+-- Tabla 'Demandas_Individual': Almacena detalles específicos para demandas de tipo 'Individual'.
+CREATE TABLE Demandas_Individual (
+  Credito BIGINT PRIMARY KEY,
+  Subtipo ENUM('Pesos', 'VSMM') NOT NULL,
+  Categoria ENUM('Demanda', 'Demandado') NOT NULL,
+  Monto_otorgado_pesos DECIMAL(15, 2),
+  Monto_otorgado_letra VARCHAR(255),
+  Monto_otorgado_vsmm DECIMAL(15, 2),
+  Adeudo_pesos DECIMAL(15, 2),
+  Adeudo_vsmm DECIMAL(15, 2),
+  Adeudo_en_pesos DECIMAL(15, 2),
+  FOREIGN KEY (Credito) REFERENCES Demandas(Credito) ON DELETE CASCADE,
+  CHECK (Subtipo IS NOT NULL AND Categoria IS NOT NULL)
+);
 
-CREATE TABLE templates_demandas (
-  template_id INT AUTO_INCREMENT PRIMARY KEY,
-  nombre_template VARCHAR(255) NOT NULL,
-  
-  -- Campos de referencia para identificar el tipo de demanda del template
-  TIPO_DEMANDA ENUM('Individual', 'Con consentimiento', 'Conyugal') NOT NULL,
-  SUBTIPO ENUM('Pesos', 'VSMM') NULL,
-  CATEGORIA ENUM('Demanda', 'Demandado') NULL,
-  
-  -- Restricción para asegurar consistencia en las combinaciones de demanda
+-- Tabla 'Demandas_Con_Consentimiento': Almacena detalles específicos para demandas de tipo 'Con consentimiento'.
+CREATE TABLE Demandas_Con_Consentimiento (
+  Credito BIGINT PRIMARY KEY,
+  Subtipo ENUM('Pesos', 'VSMM') NOT NULL,
+  Categoria ENUM('Demanda', 'Demandado') NOT NULL,
+  Monto_otorgado_pesos DECIMAL(15, 2),
+  Monto_otorgado_letra VARCHAR(255),
+  Monto_otorgado_vsmm DECIMAL(15, 2),
+  Adeudo_pesos DECIMAL(15, 2),
+  Adeudo_vsmm DECIMAL(15, 2),
+  Adeudo_en_pesos DECIMAL(15, 2),
+  FOREIGN KEY (Credito) REFERENCES Demandas(Credito) ON DELETE CASCADE,
+  CHECK (Subtipo IS NOT NULL AND Categoria IS NOT NULL)
+);
+
+-- Tabla 'Demandas_Conyugal': Almacena detalles específicos para demandas de tipo 'Conyugal'.
+CREATE TABLE Demandas_Conyugal (
+  Credito BIGINT PRIMARY KEY,
+  Credito_1 BIGINT,
+  Credito_2 BIGINT,
+  Acreditado_1 VARCHAR(255),
+  Acreditado_2 VARCHAR(255),
+  Mes_primer_adeudo_1 VARCHAR(50),
+  Mes_primer_adeudo_2 VARCHAR(50),
+  Mes_ultimo_adeudo_1 VARCHAR(50),
+  Mes_ultimo_adeudo_2 VARCHAR(50),
+  Adeudo_acreditado_1 DECIMAL(15, 2),
+  Adeudo_acreditado_2 DECIMAL(15, 2),
+  Adeudo_vsmm_1 DECIMAL(15, 2),
+  Adeudo_vsmm_2 DECIMAL(15, 2),
+  Adeudo_en_pesos_1 DECIMAL(15, 2),
+  Adeudo_en_pesos_2 DECIMAL(15, 2),
+  FOREIGN KEY (Credito) REFERENCES Demandas(Credito) ON DELETE CASCADE
+);
+
+-- Tabla 'Templates_demandas': Define los templates para demandas con diferentes combinaciones de tipo, subtipo y categoría.
+CREATE TABLE Templates_demandas (
+  Template_id INT AUTO_INCREMENT PRIMARY KEY,
+  Nombre_template VARCHAR(255) NOT NULL,
+  Tipo_demanda ENUM('Individual', 'Con consentimiento', 'Conyugal') NOT NULL,
+  Subtipo ENUM('Pesos', 'VSMM') NULL,
+  Categoria ENUM('Demanda', 'Demandado') NULL,
+  Url_template VARCHAR(500),
   CHECK (
-    (TIPO_DEMANDA = 'Individual' AND SUBTIPO IS NOT NULL AND CATEGORIA IS NOT NULL) OR
-    (TIPO_DEMANDA = 'Con consentimiento' AND SUBTIPO IS NOT NULL AND CATEGORIA IS NOT NULL) OR
-    (TIPO_DEMANDA = 'Conyugal' AND SUBTIPO IS NULL AND CATEGORIA IS NULL)
+    (Tipo_demanda = 'Individual' AND Subtipo IS NOT NULL AND Categoria IS NOT NULL) OR
+    (Tipo_demanda = 'Con consentimiento' AND Subtipo IS NOT NULL AND Categoria IS NOT NULL) OR
+    (Tipo_demanda = 'Conyugal' AND Subtipo IS NULL AND Categoria IS NULL)
   )
 );
 
-
-
-CREATE TABLE demandas_pages (
-  page_id INT AUTO_INCREMENT PRIMARY KEY,
-  template_id INT NOT NULL,
-  numero_pagina INT NOT NULL,
-  contenido TEXT NOT NULL,
-  
-  -- Clave foránea para relacionar la página con el template
-  FOREIGN KEY (template_id) REFERENCES templates_demandas (template_id) ON DELETE CASCADE
+-- Tabla 'Demandas_pages': Almacena las páginas de contenido para cada template de demanda.
+CREATE TABLE Demandas_pages (
+  Page_id INT AUTO_INCREMENT PRIMARY KEY,
+  Template_id INT NOT NULL,
+  Numero_pagina INT NOT NULL,
+  Contenido TEXT NOT NULL,
+  FOREIGN KEY (Template_id) REFERENCES Templates_demandas (Template_id)
 );

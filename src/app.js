@@ -7,6 +7,7 @@ import PositionRouter from "./routes/PosicionExpediente.routes.js"
 import ReporteRouter from "./routes/Reporte.routes.js"
 import JuzgadoRouter from "./routes/Juzgado.routes.js"
 import FiltrosRouter from "./routes/Filtros.routes.js"
+// import DemandaRouter from "./routes/Demandas.router.js"
 import cors from "cors";
 const app = express()
 
@@ -21,4 +22,6 @@ app.use('/api', ReporteRouter)
 app.use('/api', TareasRoutes)
 app.use('/api', JuzgadoRouter)
 app.use('/api', FiltrosRouter)
+// app.use('/api', DemandaRouter)
+
 export { app };

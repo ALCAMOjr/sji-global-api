@@ -30,6 +30,19 @@ export const generateEmailContentScrapingFailUser = (errorMessage) => {
     return { subject, text };
 };
 
+export const generateMissingExpedientesEmailContent = (missingExpedientes) => {
+    const subject = 'Expedientes no encontrados en CreditosSIAL';
+    const text = `
+        Los siguientes expedientes no se encontraron en la base de datos de CreditosSIAL y no se pudieron procesar:
+        
+        ${missingExpedientes.map(numero => `- ${numero}`).join('\n')}
+        
+        Por favor, revise los expedientes y vuelva a intentarlo.
+    `;
+    return { subject, text };
+};
+
+
 export const generateEmailContentScrapingFailSupport = (errorMessage) => {
     const subject = 'Error en el proceso de actualización de expedientes';
     const text = `Hubo un error durante el proceso de actualización de expedientes. Detalles del error: ${errorMessage}.\n\nPor favor, revisa este fallo lo antes posible.`;

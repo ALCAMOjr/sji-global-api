@@ -12,6 +12,10 @@ import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import csv from 'csvtojson';
 import expedienteQueue from '../workers/expedienteWorker.js';
+import emailQueue from '../workers/EmailWorker.js';
+
+import { generateMissingExpedientesEmailContent } from '../helpers/EmailFuncionts.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,6 +39,12 @@ export const createExpediente = async (req, res) => {
         const parsedNumero = parseInt(numero, 10);
         if (!parsedNumero || !nombre) {
             return res.status(400).send({ error: 'Missing required fields: numero and nombre are required.' });
+        }
+
+        const expedientInSial = await CreditoSialDAO.getByNumCredito(parsedNumero);
+
+        if (expedientInSial.length === 0) {
+            return res.status(400).send({ error: 'The expediente does not exist in CreditosSIAL.' });
         }
 
         const existingExpedientes = await ExpedienteDAO.findByNumero(parsedNumero);
@@ -309,10 +319,10 @@ export const getFilename = async (req, res) => {
 export const uploadCsvExpediente = async (req, res) => {
     try {
         const { userId } = req;
-        let { isUpdatable } = req.body; 
+        let { isUpdatable } = req.body;
         const files = req.files;
 
-        isUpdatable = isUpdatable === 'true' || isUpdatable === true;2
+        isUpdatable = isUpdatable === 'true' || isUpdatable === true;
 
         if (!files || files.length === 0) {
             return res.status(400).json({ message: 'No files uploaded' });
@@ -327,16 +337,14 @@ export const uploadCsvExpediente = async (req, res) => {
         if (!user || user.user_type !== 'coordinador') {
             return res.status(403).json({ message: 'Unauthorized' });
         }
-
-        const requiredHeaders = ['Expediente', 'Url'];
-
-        let expedientestoUpdate = []; 
+        const requiredHeaders = ['expediente', 'url'];
+        let expedientestoUpdate = [];
+        let missingExpedientes = [];
 
         for (const file of files) {
             const csvBuffer = file.buffer.toString('utf-8');
             const jsonArray = await csv().fromString(csvBuffer);
-
-            const currentHeaders = Object.keys(jsonArray[0]);
+            const currentHeaders = Object.keys(jsonArray[0]).map(header => header.toLowerCase());
             const missingFields = requiredHeaders.filter(header => !currentHeaders.includes(header));
 
             if (missingFields.length > 0) {
@@ -344,12 +352,22 @@ export const uploadCsvExpediente = async (req, res) => {
             }
 
             for (const row of jsonArray) {
-                const expediente = row['Expediente'];
-                const url = row['Url'];
+                const expediente = row['Expediente'] || row['expediente'] || row['EXPEDIENTE'];
+                const url = row['Url'] || row['url'] || row['URL'];
 
-                const existingEntries = await ExpedienteDAO.findByNumero(expediente);
+                if (!expediente || !url) {
+                    continue; 
+                }
+
                 const acreditadoData = await CreditoSialDAO.getAcreditadoByNumCredito(expediente);
-                const acreditado = acreditadoData.length > 0 ? acreditadoData[0].acreditado : null;
+
+                if (acreditadoData.length === 0) {
+                    missingExpedientes.push(expediente);
+                    continue;
+                }
+
+                const acreditado = acreditadoData[0].acreditado;
+                const existingEntries = await ExpedienteDAO.findByNumero(expediente);
 
                 if (existingEntries.length > 0) {
                     const existingEntry = existingEntries[0];
@@ -377,10 +395,19 @@ export const uploadCsvExpediente = async (req, res) => {
             }
         }
 
+        if (missingExpedientes.length > 0) {
+            const { subject, text } = generateMissingExpedientesEmailContent(missingExpedientes);
+            await emailQueue.add({
+                to: user.email,
+                subject,
+                text,
+            });
+        }
+
         if (isUpdatable) {
             const job = await expedienteQueue.add({
                 userEmail: user.email,
-                expedientes: expedientestoUpdate 
+                expedientes: expedientestoUpdate
             });
             return res.status(202).json({ jobId: job.id, message: 'Expedientes update process started with the provided CSV expedientes' });
         }
@@ -393,7 +420,6 @@ export const uploadCsvExpediente = async (req, res) => {
 };
 
 
-
 export const startUpdateExpedientes = async (req, res) => {
     const { userId } = req;
     const user = await AbogadoDAO.getById(userId);
@@ -402,7 +428,7 @@ export const startUpdateExpedientes = async (req, res) => {
     }
     try {
         const job = await expedienteQueue.add({
-            userEmail: user.email 
+            userEmail: user.email
         });
         res.status(202).send({ jobId: job.id, message: 'Expediente update process started' });
     } catch (error) {
@@ -430,11 +456,11 @@ export const getJobStatus = async (req, res) => {
 
         let result = null;
         if (state === 'completed') {
-            result = job.returnvalue; 
-        } 
+            result = job.returnvalue;
+        }
 
         else if (state === 'failed') {
-            result = job.failedReason; 
+            result = job.failedReason;
         }
 
         res.send({ state, progress, result });
