@@ -111,7 +111,7 @@ CREATE TABLE Filtros (
 
 -- Tabla 'Demandas': Tabla principal que almacena los datos comunes de todas las demandas, independientemente de su tipo.
 CREATE TABLE Demandas (
-  Credito BIGINT NOT NULL PRIMARY KEY CHECK (CHAR_LENGTH(Credito) = 9),
+  Credito BIGINT NOT NULL PRIMARY KEY,
   Tipo_demanda ENUM('Individual', 'Con consentimiento', 'Conyugal') NOT NULL,
   Template_id INT,
   Acreditado VARCHAR(255),
@@ -122,7 +122,7 @@ CREATE TABLE Demandas (
   Codigo_postal VARCHAR(10),
   Municipio VARCHAR(255),
   Estado VARCHAR(255),
-  FOREIGN KEY (Template_id) REFERENCES templates_demandas (template_id) ON DELETE SET NULL
+  FOREIGN KEY (Template_id) REFERENCES Templates_demandas (template_id) ON DELETE SET NULL
 );
 
 -- Tabla 'Demandas_Individual': Almacena detalles específicos para demandas de tipo 'Individual'.
