@@ -1,5 +1,5 @@
-import ReporteDAO from "../utils/ReporteDao.js";
-import AbogadoDAO from "../utils/AbogadoDAO.js";
+import ReporteDAO from "../daos/ReporteDao.js";
+import AbogadoDAO from "../daos/AbogadoDAO.js";
 
 
 export const getReporte = async (req, res) => {

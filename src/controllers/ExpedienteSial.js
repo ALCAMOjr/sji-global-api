@@ -1,5 +1,5 @@
-import CreditoSialDAO from '../utils/CreditosSialDAO.js';
-import AbogadoDAO from '../utils/AbogadoDAO.js';
+import CreditoSialDAO from '../daos/CreditosSialDAO.js';
+import AbogadoDAO from '../daos/AbogadoDAO.js';
 import csv from 'csvtojson';
 
 export const uploadAndConvertCsv = async (req, res) => {

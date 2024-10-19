@@ -1,8 +1,8 @@
-import AbogadoDAO from '../utils/AbogadoDAO.js';
+import AbogadoDAO from '../daos/AbogadoDAO.js';
 import bcryptjs from 'bcryptjs';
 import jsonwebtoken from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import TareaDAO from '../utils/TareaDAO.js';
+import TareaDAO from '../daos/TareaDAO.js';
 import emailQueue from '../config/emailQueque.config.js'; 
 import { generateWelcomeEmail } from '../helpers/EmailFuncionts.js'; 
 import { generatePassword } from '../helpers/generatePassword.js';

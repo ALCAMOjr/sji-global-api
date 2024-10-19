@@ -1,8 +1,8 @@
 import Tarea from '../models/Tarea.js';
-import TareaDAO from '../utils/TareaDAO.js';
-import AbogadoDAO from "../utils/AbogadoDAO.js";
-import ExpedienteDAO from "../utils/ExpedienteDAO.js";
-import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
+import TareaDAO from '../daos/TareaDAO.js';
+import AbogadoDAO from "../daos/AbogadoDAO.js";
+import ExpedienteDAO from "../daos/ExpedienteDAO.js";
+import ExpedienteDetalleDAO from '../daos/ExpedienteDetDao.js';
 import emailQueue from '../workers/EmailWorker.js';
 import { generateTaskAssignmentEmail, generateTaskCompletionEmail, getMexicoCityDate } from '../helpers/EmailFuncionts.js';
 

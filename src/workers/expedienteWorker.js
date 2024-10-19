@@ -1,9 +1,9 @@
 import Queue from 'bull';
 import { initializeBrowserBatch, fillExpTribunalA, scrappingDet } from '../helpers/webScraping.js';
 import Expediente from '../models/Expediente.js';
-import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
+import ExpedienteDetalleDAO from '../daos/ExpedienteDetDao.js';
 import ExpedienteDetalle from '../models/ExpedienteDet.js';
-import ExpedienteDAO from '../utils/ExpedienteDAO.js';
+import ExpedienteDAO from '../daos/ExpedienteDAO.js';
 import { generateEmailContentScrapingFailUser, generateEmailContentCriticalError, generateEmailContentScrapingFailSupport, generateEmailContentSuccess, generateEmailContentPartialSuccess } from '../helpers/EmailFuncionts.js';
 import emailQueue from '../workers/EmailWorker.js';
 

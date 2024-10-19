@@ -1,6 +1,6 @@
-import AbogadoDAO from "../utils/AbogadoDAO.js";
-import PositionDao from "../utils/PositionDAO.js";
-import ExpedienteDetalleDAO from "../utils/ExpedienteDetDao.js";
+import AbogadoDAO from "../daos/AbogadoDAO.js";
+import PositionDao from "../daos/PositionDAO.js";
+import ExpedienteDetalleDAO from "../daos/ExpedienteDetDao.js";
 
 export const getPositionExpedientes = async (req, res) => {
     try {

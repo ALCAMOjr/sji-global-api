@@ -1,5 +1,5 @@
-import JuzgadoDao from "../utils/JuzgadoDAO.js";
-import AbogadoDAO from "../utils/AbogadoDAO.js";
+import JuzgadoDao from "../daos/JuzgadoDAO.js";
+import AbogadoDAO from "../daos/AbogadoDAO.js";
 
 
 export const getAllJuzgados = async (req, res) => {

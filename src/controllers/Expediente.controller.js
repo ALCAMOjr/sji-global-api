@@ -1,12 +1,12 @@
-import ExpedienteDAO from '../utils/ExpedienteDAO.js';
-import AbogadoDAO from '../utils/AbogadoDAO.js';
+import ExpedienteDAO from '../daos/ExpedienteDAO.js';
+import AbogadoDAO from '../daos/AbogadoDAO.js';
 import Expediente from '../models/Expediente.js';
-import ExpedienteDetalleDAO from '../utils/ExpedienteDetDao.js';
+import ExpedienteDetalleDAO from '../daos/ExpedienteDetDao.js';
 import ExpedienteDetalle from '../models/ExpedienteDet.js';
-import CreditoSialDAO from '../utils/CreditosSialDAO.js';
+import CreditoSialDAO from '../daos/CreditosSialDAO.js';
 import { initializeBrowser, fillExpTribunalA, scrappingDet, scrappingPdf } from '../helpers/webScraping.js';
 import path from "path"
-import TareaDAO from '../utils/TareaDAO.js';
+import TareaDAO from '../daos/TareaDAO.js';
 import fs from 'fs';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';

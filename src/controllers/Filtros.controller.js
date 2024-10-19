@@ -1,5 +1,5 @@
-import FiltrosDAO from "../utils/FiltrosDAO.js";
-import AbogadoDAO from "../utils/AbogadoDAO.js";
+import FiltrosDAO from "../daos/FiltrosDAO.js";
+import AbogadoDAO from "../daos/AbogadoDAO.js";
 
 export const getAllFiltros = async (req, res) => {
     try {

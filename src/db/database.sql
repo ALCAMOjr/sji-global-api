@@ -109,92 +109,57 @@ CREATE TABLE Filtros (
     notificacion VARCHAR(255)
 );
 
--- Tabla 'Demandas': Tabla principal que almacena los datos comunes de todas las demandas, independientemente de su tipo.
-CREATE TABLE Demandas (
-  Credito BIGINT NOT NULL PRIMARY KEY,
-  Tipo_demanda ENUM('Individual', 'Con consentimiento', 'Conyugal') NOT NULL,
-  Template_id INT,
-  Acreditado VARCHAR(255),
-  Fecha DATE,
-  Calle VARCHAR(255),
-  Numero VARCHAR(50),
-  Colonia_fraccionamiento VARCHAR(255),
-  Codigo_postal VARCHAR(10),
-  Municipio VARCHAR(255),
-  Estado VARCHAR(255),
-  FOREIGN KEY (Template_id) REFERENCES Templates_demandas (template_id) ON DELETE SET NULL
+CREATE TABLE Templates_iycc (
+  template_id INT AUTO_INCREMENT PRIMARY KEY,
+  subtipo ENUM('Pesos', 'VSSM') NOT NULL,
+  nombre_template VARCHAR(255) NOT NULL,
+  descripcion VARCHAR(255) NOT NULL,
+  url_template VARCHAR(500)
 );
 
--- Tabla 'Demandas_Individual': Almacena detalles específicos para demandas de tipo 'Individual'.
-CREATE TABLE Demandas_Individual (
-  Credito BIGINT PRIMARY KEY,
-  Subtipo ENUM('Pesos', 'VSMM') NOT NULL,
-  Categoria ENUM('Demanda', 'Demandado') NOT NULL,
-  Monto_otorgado_pesos DECIMAL(15, 2),
-  Monto_otorgado_letra VARCHAR(255),
-  Monto_otorgado_vsmm DECIMAL(15, 2),
-  Adeudo_pesos DECIMAL(15, 2),
-  Adeudo_vsmm DECIMAL(15, 2),
-  Adeudo_en_pesos DECIMAL(15, 2),
-  FOREIGN KEY (Credito) REFERENCES Demandas(Credito) ON DELETE CASCADE,
-  CHECK (Subtipo IS NOT NULL AND Categoria IS NOT NULL)
+CREATE TABLE Demandas_pages_iycc (
+  page_id INT AUTO_INCREMENT PRIMARY KEY,
+  template_id INT NOT NULL,
+  numero_pagina INT NOT NULL,
+  contenido TEXT NOT NULL,
+  FOREIGN KEY (template_id) REFERENCES Templates_iycc(template_id)
 );
 
--- Tabla 'Demandas_Con_Consentimiento': Almacena detalles específicos para demandas de tipo 'Con consentimiento'.
-CREATE TABLE Demandas_Con_Consentimiento (
-  Credito BIGINT PRIMARY KEY,
-  Subtipo ENUM('Pesos', 'VSMM') NOT NULL,
-  Categoria ENUM('Demanda', 'Demandado') NOT NULL,
-  Monto_otorgado_pesos DECIMAL(15, 2),
-  Monto_otorgado_letra VARCHAR(255),
-  Monto_otorgado_vsmm DECIMAL(15, 2),
-  Adeudo_pesos DECIMAL(15, 2),
-  Adeudo_vsmm DECIMAL(15, 2),
-  Adeudo_en_pesos DECIMAL(15, 2),
-  FOREIGN KEY (Credito) REFERENCES Demandas(Credito) ON DELETE CASCADE,
-  CHECK (Subtipo IS NOT NULL AND Categoria IS NOT NULL)
-);
 
--- Tabla 'Demandas_Conyugal': Almacena detalles específicos para demandas de tipo 'Conyugal'.
-CREATE TABLE Demandas_Conyugal (
-  Credito BIGINT PRIMARY KEY,
-  Credito_1 BIGINT,
-  Credito_2 BIGINT,
-  Acreditado_1 VARCHAR(255),
-  Acreditado_2 VARCHAR(255),
-  Mes_primer_adeudo_1 VARCHAR(50),
-  Mes_primer_adeudo_2 VARCHAR(50),
-  Mes_ultimo_adeudo_1 VARCHAR(50),
-  Mes_ultimo_adeudo_2 VARCHAR(50),
-  Adeudo_acreditado_1 DECIMAL(15, 2),
-  Adeudo_acreditado_2 DECIMAL(15, 2),
-  Adeudo_vsmm_1 DECIMAL(15, 2),
-  Adeudo_vsmm_2 DECIMAL(15, 2),
-  Adeudo_en_pesos_1 DECIMAL(15, 2),
-  Adeudo_en_pesos_2 DECIMAL(15, 2),
-  FOREIGN KEY (Credito) REFERENCES Demandas(Credito) ON DELETE CASCADE
-);
-
--- Tabla 'Templates_demandas': Define los templates para demandas con diferentes combinaciones de tipo, subtipo y categoría.
-CREATE TABLE Templates_demandas (
-  Template_id INT AUTO_INCREMENT PRIMARY KEY,
-  Nombre_template VARCHAR(255) NOT NULL,
-  Tipo_demanda ENUM('Individual', 'Con consentimiento', 'Conyugal') NOT NULL,
-  Subtipo ENUM('Pesos', 'VSMM') NULL,
-  Categoria ENUM('Demanda', 'Demandado') NULL,
-  Url_template VARCHAR(500),
-  CHECK (
-    (Tipo_demanda = 'Individual' AND Subtipo IS NOT NULL AND Categoria IS NOT NULL) OR
-    (Tipo_demanda = 'Con consentimiento' AND Subtipo IS NOT NULL AND Categoria IS NOT NULL) OR
-    (Tipo_demanda = 'Conyugal' AND Subtipo IS NULL AND Categoria IS NULL)
-  )
-);
-
--- Tabla 'Demandas_pages': Almacena las páginas de contenido para cada template de demanda.
-CREATE TABLE Demandas_pages (
-  Page_id INT AUTO_INCREMENT PRIMARY KEY,
-  Template_id INT NOT NULL,
-  Numero_pagina INT NOT NULL,
-  Contenido TEXT NOT NULL,
-  FOREIGN KEY (Template_id) REFERENCES Templates_demandas (Template_id)
+CREATE TABLE Demandas_iycc (
+  credito BIGINT PRIMARY KEY,
+  subtipo ENUM('Pesos', 'VSSM') NOT NULL, 
+  template_id INT,
+  acreditado VARCHAR(255),
+  categoria ENUM('Demandada', 'Demandado') NOT NULL, 
+  escritura DECIMAL(15, 2),
+  escritura_ft VARCHAR(255), 
+  fecha DATE,
+  fecha_ft VARCHAR(255), 
+  inscripcion INT,
+  volumen INT,
+  libro INT,
+  seccion VARCHAR(255),
+  unidad VARCHAR(255),
+  fecha1 DATE,
+  fecha1_ft VARCHAR(255), 
+  monto_otorgado DECIMAL(15, 2),
+  monto_otorgado_ft VARCHAR(255), 
+  mes_primer_adeudo VARCHAR(50),
+  mes_ultimo_adeudo VARCHAR(50),
+  adeudo DECIMAL(15, 2),
+  adeudo_ft VARCHAR(255), 
+  calle VARCHAR(255),
+  numero VARCHAR(50),
+  colonia_fraccionamiento VARCHAR(255),
+  municipio VARCHAR(255),
+  estado VARCHAR(255),
+  codigo_postal VARCHAR(10),
+  interes_ordinario DECIMAL(5, 2),
+  interes_moratorio DECIMAL(5, 2),
+  juzgado VARCHAR(255),
+  hora_requerimiento TIME,
+  fecha_requerimiento DATE,
+  fecha_requerimiento_ft VARCHAR(255), 
+  FOREIGN KEY (template_id) REFERENCES Templates_iycc(template_id)
 );
