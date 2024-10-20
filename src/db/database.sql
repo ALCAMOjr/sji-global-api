@@ -114,7 +114,7 @@ CREATE TABLE Templates_iycc (
   subtipo ENUM('Pesos', 'VSSM') NOT NULL,
   nombre_template VARCHAR(255) NOT NULL,
   descripcion VARCHAR(255) NOT NULL,
-  url_template VARCHAR(500)
+  template_pdf VARCHAR(500)
 );
 
 CREATE TABLE Demandas_pages_iycc (
@@ -124,7 +124,6 @@ CREATE TABLE Demandas_pages_iycc (
   contenido TEXT NOT NULL,
   FOREIGN KEY (template_id) REFERENCES Templates_iycc(template_id)
 );
-
 
 CREATE TABLE Demandas_iycc (
   credito BIGINT PRIMARY KEY,

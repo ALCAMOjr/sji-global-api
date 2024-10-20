@@ -8,6 +8,7 @@ import ReporteRouter from "./routes/Reporte.routes.js"
 import JuzgadoRouter from "./routes/Juzgado.routes.js"
 import FiltrosRouter from "./routes/Filtros.routes.js"
 import DemandasIycc from "./routes/DemandasIycc.router.js"
+import NumbersToWords from "./routes/NumberToWords.routes.js"
 import cors from "cors";
 const app = express()
 
@@ -23,5 +24,5 @@ app.use('/api', TareasRoutes)
 app.use('/api', JuzgadoRouter)
 app.use('/api', FiltrosRouter)
 app.use('/api', DemandasIycc)
-
+app.use('/api', NumbersToWords)
 export { app };
