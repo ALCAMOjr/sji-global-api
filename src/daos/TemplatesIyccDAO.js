@@ -16,6 +16,14 @@ class TemplatesIyccDAO {
         return await this.getById(result.insertId);
     }
 
+    static async getTemplateIdBySubtipo(subtipo) {
+        const [rows] = await pool.query(
+            `SELECT template_id FROM Templates_iycc WHERE subtipo = ? LIMIT 1`,
+            [subtipo]
+        );
+        return rows.length > 0 ? rows[0].template_id : null;
+    }
+
     static async getAll() {
         const [rows] = await pool.query(`SELECT * FROM Templates_iycc`);
         return rows.map(row => new Templates_iycc(row));
