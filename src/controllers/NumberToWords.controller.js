@@ -19,3 +19,24 @@ export const getNumberToWords = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while converting the number to words' });
     }
 };
+
+
+
+
+export const getNumberToWordsPesos = async (req, res) => {
+    try {
+        const { userId } = req;
+        const number = Math.floor(req.params.number);
+
+        const user = await AbogadoDAO.getById(userId);
+        if (!user) {
+            return res.status(403).send({ error: 'Unauthorized' });
+        }
+        let words = NumerosALetras(number)
+
+        return res.status(200).send({ words });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: 'An error occurred while converting the number to words' });
+    }
+};
