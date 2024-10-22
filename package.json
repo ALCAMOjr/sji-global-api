@@ -43,6 +43,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.14",
     "npm": "^10.8.2",
+    "numero-a-letras": "^1.0.6",
     "open": "^10.1.0",
     "openai": "^4.56.0",
     "pdf-lib": "^1.17.1",

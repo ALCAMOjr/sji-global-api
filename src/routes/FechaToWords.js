@@ -4,6 +4,6 @@ import abogadoExtractor from '../middleware/abogadoExtractor.js';
 
 const router = Router();
 
-router.get('/fechaToWords', abogadoExtractor, getFechaToWords);
+router.get('/fechaToWords/:fecha', abogadoExtractor, getFechaToWords);
 
 export default router;

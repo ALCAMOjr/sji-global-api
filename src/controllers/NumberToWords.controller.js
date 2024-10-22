@@ -10,7 +10,7 @@ export const getNumberToWords = async (req, res) => {
         if (!user) {
             return res.status(403).send({ error: 'Unauthorized' });
         }
-        let words = NumerosALetras(number);
+        let words = NumerosALetras(number).toUpperCase();
         words = words.replace(/ pesos 00\/100 M\.N\./i, '');
 
         return res.status(200).send({ words });
@@ -26,13 +26,15 @@ export const getNumberToWords = async (req, res) => {
 export const getNumberToWordsPesos = async (req, res) => {
     try {
         const { userId } = req;
-        const number = Math.floor(req.params.number);
+        const number = req.params.number;
 
         const user = await AbogadoDAO.getById(userId);
         if (!user) {
             return res.status(403).send({ error: 'Unauthorized' });
         }
-        let words = NumerosALetras(number)
+        let words = NumerosALetras(number).toUpperCase();
+
+        console.log(words)
 
         return res.status(200).send({ words });
     } catch (error) {

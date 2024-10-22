@@ -12,26 +12,27 @@ const getMonthInText = (month) => {
 export const getFechaToWords = async (req, res) => {
     try {
         const { userId } = req;
-        const { fecha } = req.query; 
+        const { fecha } = req.params; 
 
         const user = await AbogadoDAO.getById(userId);
         if (!user) {
             return res.status(403).send({ error: 'Unauthorized' });
         }
-
-        const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+        const dateRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
         const match = fecha.match(dateRegex);
         if (!match) {
-            return res.status(400).send({ error: 'Invalid date format. Use dd/mm/yyyy' });
+            return res.status(400).send({ error: 'Invalid date format. Use yyyy-mm-dd' });
         }
+        const [_, year, month, day] = match;
 
-        const [_, day, month, year] = match.map(Number);
+        const dayNum = parseInt(day, 10);
+        const monthNum = parseInt(month, 10);
+        const yearNum = parseInt(year, 10);
 
-        let dayInWords = NumerosALetras(day).replace(/ pesos 00\/100 M\.N\./i, '').toLowerCase();
-        const monthInWords = getMonthInText(month);
-        let yearInWords = NumerosALetras(year).replace(/ pesos 00\/100 M\.N\./i, '').toLowerCase();
-
-        const words = `${day} (${dayInWords}) de ${monthInWords} del ${year} (${yearInWords})`;
+        const dayInWords = NumerosALetras(dayNum).replace(/ pesos 00\/100 M\.N\./i, '').toLowerCase();
+        const monthInWords = getMonthInText(monthNum);
+        const yearInWords = NumerosALetras(yearNum).replace(/ pesos 00\/100 M\.N\./i, '').toLowerCase();
+        const words = `${dayNum} (${dayInWords}) de ${monthInWords} del ${yearNum} (${yearInWords})`;
 
         res.status(200).send({ words });
     } catch (error) {
