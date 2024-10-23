@@ -27,9 +27,11 @@ export const createDemanda = async (req, res) => {
             return res.status(400).send({ error: 'An demanda with this credito already exists.' });
         }
 
+        console.log(body.subtipo)
+
         const templateId = await TemplatesIyccDAO.getTemplateIdBySubtipo(body.subtipo);
         if (!templateId) {
-            return res.status(404).send({ error: 'Template not found for the given subtipo.' });
+            return res.status(400).send({ error: 'Template not found for the given subtipo.' });
         }
 
         body.template_id = templateId;

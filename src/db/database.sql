@@ -111,7 +111,7 @@ CREATE TABLE Filtros (
 
 CREATE TABLE Templates_iycc (
   template_id INT AUTO_INCREMENT PRIMARY KEY,
-  subtipo ENUM('Pesos', 'VSSM') NOT NULL,
+  subtipo ENUM('Pesos', 'VSMM') NOT NULL,
   nombre_template VARCHAR(255) NOT NULL,
   descripcion VARCHAR(255) NOT NULL,
   template_pdf VARCHAR(500)
@@ -127,7 +127,7 @@ CREATE TABLE Demandas_pages_iycc (
 
 CREATE TABLE Demandas_iycc (
   credito BIGINT PRIMARY KEY,
-  subtipo ENUM('Pesos', 'VSSM') NOT NULL, 
+  subtipo ENUM('Pesos', 'VSMM') NOT NULL, 
   template_id INT,
   acreditado VARCHAR(255),
   categoria ENUM('Demandada', 'Demandado') NOT NULL, 

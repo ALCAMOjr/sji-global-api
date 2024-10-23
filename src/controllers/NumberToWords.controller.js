@@ -34,8 +34,6 @@ export const getNumberToWordsPesos = async (req, res) => {
         }
         let words = NumerosALetras(number).toUpperCase();
 
-        console.log(words)
-
         return res.status(200).send({ words });
     } catch (error) {
         console.error(error);
