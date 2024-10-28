@@ -5,7 +5,7 @@ class DemandaIyccDAO {
 
     static async create(demandaData) {
         const {
-            credito, subtipo, template_id, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
+            credito, subtipo, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
             inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
             mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
             colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio,
@@ -13,7 +13,7 @@ class DemandaIyccDAO {
         } = demandaData;
     
         const values = [
-            credito, subtipo, template_id || null, acreditado || null, categoria, escritura || null, escritura_ft || null, 
+            credito, subtipo, acreditado || null, categoria, escritura || null, escritura_ft || null, 
             fecha_escritura || null, fecha_escritura_ft || null, inscripcion || null, volumen || null, libro || null, 
             seccion || null, unidad || null, fecha || null, fecha_ft || null, monto_otorgado || null, monto_otorgado_ft || null,
             mes_primer_adeudo || null, mes_ultimo_adeudo || null, adeudo || null, adeudo_ft || null, adeudo_pesos || null, 
@@ -24,12 +24,12 @@ class DemandaIyccDAO {
     
         await pool.query(
             `INSERT INTO Demandas_iycc (
-                credito, subtipo, template_id, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
+                credito, subtipo, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
                 inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
                 mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
                 colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio,
                 juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             values
         );
     
@@ -52,7 +52,7 @@ class DemandaIyccDAO {
     
     static async update(credito, updatedData) {
         const {
-            subtipo, template_id, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
+            subtipo, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
             inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
             mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
             colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio, juzgado,
@@ -62,7 +62,6 @@ class DemandaIyccDAO {
         await pool.query(
             `UPDATE Demandas_iycc SET 
                 subtipo = IFNULL(?, subtipo), 
-                template_id = IFNULL(?, template_id), 
                 acreditado = IFNULL(?, acreditado), 
                 categoria = IFNULL(?, categoria), 
                 escritura = IFNULL(?, escritura), 
@@ -98,7 +97,7 @@ class DemandaIyccDAO {
                 fecha_requerimiento_ft = IFNULL(?, fecha_requerimiento_ft)
             WHERE credito = ?`,
             [
-                subtipo, template_id, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
+                subtipo, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
                 inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
                 mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
                 colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio, 

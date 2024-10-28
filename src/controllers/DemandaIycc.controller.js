@@ -1,7 +1,6 @@
 import DemandaIyccDAO from "../daos/DemandasIyccDAO.js";
 import AbogadoDAO from "../daos/AbogadoDAO.js";
 import CreditoSialDAO from "../daos/CreditosSialDAO.js";
-import TemplatesIyccDAO from "../daos/TemplatesIyccDAO.js";
 
 export const createDemanda = async (req, res) => {
     try {
@@ -27,15 +26,6 @@ export const createDemanda = async (req, res) => {
             return res.status(400).send({ error: 'An demanda with this credito already exists.' });
         }
 
-        console.log(body.subtipo)
-
-        const templateId = await TemplatesIyccDAO.getTemplateIdBySubtipo(body.subtipo);
-        if (!templateId) {
-            return res.status(400).send({ error: 'Template not found for the given subtipo.' });
-        }
-
-        body.template_id = templateId;
-
         const createdDemanda = await DemandaIyccDAO.create(body)
 
         res.status(200).json(createdDemanda);
@@ -45,6 +35,30 @@ export const createDemanda = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while creating the demanda' });
     }
 };
+
+
+export const getDemandaPdf = async (req, res) => {
+    try {
+        const { userId } = req;
+        const { credito } = req.params;
+        const user = await AbogadoDAO.getById(userId);
+        if (!user) {
+            return res.status(403).send({ error: 'Unauthorized' });
+        }
+
+       const data = await DemandaIyccDAO.getByCredito(credito);
+
+       
+
+        res.sendStatus(204);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: 'An error occurred while deleting the demanda' });
+    }
+};
+
+
+
 
 export const getAllDemandas = async (req, res) => {
     try {
@@ -92,13 +106,6 @@ export const updateDemanda = async (req, res) => {
         const existingDemanda = await DemandaIyccDAO.getByCredito(credito);
         if (existingDemanda.length === 0) {
             return res.status(404).send({ error: 'Demanda not found' });
-        }
-        if (body.subtipo && body.subtipo !== existingDemanda[0].subtipo) {
-            const templateId = await TemplatesIyccDAO.getTemplateIdBySubtipo(body.subtipo);
-            if (!templateId) {
-                return res.status(404).send({ error: 'Template not found for the given subtipo.' });
-            }
-            body.template_id = templateId;
         }
         const updatedDemanda = await DemandaIyccDAO.update(credito, body);
         res.status(200).json(updatedDemanda);
