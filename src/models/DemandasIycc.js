@@ -35,7 +35,10 @@ class Demandas_iycc {
         juzgado,
         hora_requerimiento,
         fecha_requerimiento,
-        fecha_requerimiento_ft 
+        fecha_requerimiento_ft,
+        folio,
+        numero_ss,
+
     }) {
         this.credito = credito;
         this.subtipo = subtipo;
@@ -73,6 +76,8 @@ class Demandas_iycc {
         this.hora_requerimiento = hora_requerimiento;
         this.fecha_requerimiento = fecha_requerimiento;
         this.fecha_requerimiento_ft = fecha_requerimiento_ft;
+        this.folio = folio,
+        this.numero_ss = numero_ss
     }
 }
 

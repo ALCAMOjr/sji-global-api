@@ -9,17 +9,17 @@ class DemandaIyccDAO {
             inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
             mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
             colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio,
-            juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft
+            juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss
         } = demandaData;
     
         const values = [
             credito, subtipo, acreditado || null, categoria, escritura || null, escritura_ft || null, 
             fecha_escritura || null, fecha_escritura_ft || null, inscripcion || null, volumen || null, libro || null, 
-            seccion || null, unidad || null, fecha || null, fecha_ft || null, monto_otorgado || null, monto_otorgado_ft || null,
+            seccion, unidad || null, fecha || null, fecha_ft || null, monto_otorgado || null, monto_otorgado_ft || null,
             mes_primer_adeudo || null, mes_ultimo_adeudo || null, adeudo || null, adeudo_ft || null, adeudo_pesos || null, 
             adeudo_pesos_ft || null, calle || null, numero || null, colonia_fraccionamiento || null, municipio || null, 
             estado || null, codigo_postal || null, interes_ordinario || null, interes_moratorio || null, juzgado || null, 
-            hora_requerimiento || null, fecha_requerimiento || null, fecha_requerimiento_ft || null
+            hora_requerimiento || null, fecha_requerimiento || null, fecha_requerimiento_ft || null, folio || null, numero_ss || null
         ];
     
         await pool.query(
@@ -28,8 +28,8 @@ class DemandaIyccDAO {
                 inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
                 mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
                 colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio,
-                juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             values
         );
     
@@ -56,7 +56,7 @@ class DemandaIyccDAO {
             inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
             mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
             colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio, juzgado,
-            hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft
+            hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss
         } = updatedData;
     
         await pool.query(
@@ -94,14 +94,16 @@ class DemandaIyccDAO {
                 juzgado = IFNULL(?, juzgado), 
                 hora_requerimiento = IFNULL(?, hora_requerimiento), 
                 fecha_requerimiento = IFNULL(?, fecha_requerimiento), 
-                fecha_requerimiento_ft = IFNULL(?, fecha_requerimiento_ft)
+                fecha_requerimiento_ft = IFNULL(?, fecha_requerimiento_ft),
+                folio = IFNULL(?, folio), 
+                numero_ss = IFNULL(?, numero_ss)
             WHERE credito = ?`,
             [
                 subtipo, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
                 inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
                 mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
                 colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio, 
-                juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, credito
+                juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss, credito
             ]
         );
     

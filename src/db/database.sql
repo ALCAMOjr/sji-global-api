@@ -109,26 +109,9 @@ CREATE TABLE Filtros (
     notificacion VARCHAR(255)
 );
 
-CREATE TABLE Templates_iycc (
-  template_id INT AUTO_INCREMENT PRIMARY KEY,
-  subtipo ENUM('Pesos', 'VSMM') NOT NULL,
-  nombre_template VARCHAR(255) NOT NULL,
-  descripcion VARCHAR(255) NOT NULL,
-  template_pdf VARCHAR(500)
-);
-
-CREATE TABLE Demandas_pages_iycc (
-  page_id INT AUTO_INCREMENT PRIMARY KEY,
-  template_id INT NOT NULL,
-  numero_pagina INT NOT NULL,
-  contenido TEXT NOT NULL,
-  FOREIGN KEY (template_id) REFERENCES Templates_iycc(template_id)
-);
-
 CREATE TABLE Demandas_iycc (
   credito BIGINT PRIMARY KEY,
   subtipo ENUM('Pesos', 'VSMM') NOT NULL, 
-  template_id INT,
   acreditado VARCHAR(255),
   categoria ENUM('Demandada', 'Demandado') NOT NULL, 
   escritura INT,
@@ -138,17 +121,17 @@ CREATE TABLE Demandas_iycc (
   inscripcion INT,
   volumen INT,
   libro INT,
-  seccion VARCHAR(255),
+  seccion ENUM('Propiedad', 'Gravamen') NOT NULL,
   unidad VARCHAR(255),
   fecha DATE,
   fecha_ft VARCHAR(255), 
-  monto_otorgado DECIMAL(15, 2),
+  monto_otorgado FLOAT,
   monto_otorgado_ft VARCHAR(255), 
   mes_primer_adeudo VARCHAR(50),
   mes_ultimo_adeudo VARCHAR(50),
-  adeudo DECIMAL(15, 2),
+  adeudo FLOAT,
   adeudo_ft VARCHAR(255), 
-  adeudo_pesos DECIMAL(15, 2),
+  adeudo_pesos FLOAT,
   adeudo_pesos_ft VARCHAR(255), 
   calle VARCHAR(255),
   numero VARCHAR(50),
@@ -156,11 +139,12 @@ CREATE TABLE Demandas_iycc (
   municipio VARCHAR(255),
   estado VARCHAR(255),
   codigo_postal VARCHAR(10),
-  interes_ordinario DECIMAL(5, 2),
-  interes_moratorio DECIMAL(5, 2),
+  interes_ordinario FLOAT
+  interes_moratorio FLOAT,
   juzgado VARCHAR(255),
   hora_requerimiento TIME,
   fecha_requerimiento DATE,
-  fecha_requerimiento_ft VARCHAR(255), 
-  FOREIGN KEY (template_id) REFERENCES Templates_iycc(template_id)
+  fecha_requerimiento_ft VARCHAR(255),
+  folio INT,
+  numero_ss INT,
 );
