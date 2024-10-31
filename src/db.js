@@ -53,7 +53,7 @@ try {
       password: PASSWORD_DATABASE,
       database: DATABASE,
       connectTimeout: 10000,
-      timezone: 'America/Mexico_City'
+      timezone: '-06:00'
     });
   }
 } catch (error) {
