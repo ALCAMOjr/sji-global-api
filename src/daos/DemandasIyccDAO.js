@@ -4,6 +4,7 @@ import Demandas_iycc from "../models/DemandasIycc.js";
 class DemandaIyccDAO {
 
     static async create(demandaData) {
+        console.log(demandaData)
         const {
             credito, subtipo, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
             inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,

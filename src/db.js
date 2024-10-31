@@ -37,12 +37,13 @@ try {
     });
   } else if (NODE_ENV === 'development') {
     pool = createPool({
-      port: DB_PORT_DEV,
-      host: HOST_DATABASE_DEV,
-      user: USER_DATABASE_DEV,
-      password: PASSWORD_DATABASE_DEV,
-      database: DATABASE_DEV,
+      port: DB_PORT,
+      host: HOST_DATABASE,
+      user: USER_DATABASE,
+      password: PASSWORD_DATABASE,
+      database: DATABASE,
       connectTimeout: 10000,
+      timezone: '-06:00'
     });
   } else {
     pool = createPool({
@@ -52,6 +53,7 @@ try {
       password: PASSWORD_DATABASE,
       database: DATABASE,
       connectTimeout: 10000,
+      timezone: 'America/Mexico_City'
     });
   }
 } catch (error) {

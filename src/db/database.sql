@@ -139,12 +139,12 @@ CREATE TABLE Demandas_iycc (
   municipio VARCHAR(255),
   estado VARCHAR(255),
   codigo_postal VARCHAR(10),
-  interes_ordinario FLOAT
+  interes_ordinario FLOAT,
   interes_moratorio FLOAT,
   juzgado VARCHAR(255),
   hora_requerimiento TIME,
   fecha_requerimiento DATE,
   fecha_requerimiento_ft VARCHAR(255),
   folio INT,
-  numero_ss INT,
+  numero_ss INT
 );
