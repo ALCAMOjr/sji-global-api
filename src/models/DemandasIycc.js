@@ -1,8 +1,7 @@
 class Demandas_iycc {
     constructor({
         credito,
-        subtipo, 
-        template_id,  
+        subtipo,  
         acreditado,
         categoria, 
         escritura,
@@ -42,7 +41,6 @@ class Demandas_iycc {
     }) {
         this.credito = credito;
         this.subtipo = subtipo;
-        this.template_id = template_id;
         this.acreditado = acreditado;
         this.categoria = categoria;
         this.escritura = escritura;

@@ -131,7 +131,7 @@ CREATE TABLE Demandas_iycc (
   mes_ultimo_adeudo VARCHAR(50),
   adeudo DECIMAL(20, 2),
   adeudo_ft VARCHAR(255), 
-  adeudo_pesos FLOAT,
+  adeudo_pesos DECIMAL(20, 2),
   adeudo_pesos_ft VARCHAR(255), 
   calle VARCHAR(255),
   numero VARCHAR(50),
@@ -146,5 +146,5 @@ CREATE TABLE Demandas_iycc (
   fecha_requerimiento DATE,
   fecha_requerimiento_ft VARCHAR(255),
   folio INT,
-  numero_ss INT
+  numero_ss BIGINT
 );

@@ -1,6 +1,8 @@
 import DemandaIyccDAO from "../daos/DemandasIyccDAO.js";
 import AbogadoDAO from "../daos/AbogadoDAO.js";
 import CreditoSialDAO from "../daos/CreditosSialDAO.js";
+import DemandaIyccVSMMPdfService from "../services/DemandaIyccVSMMPdfService.js";
+import DemandaIyccPesosPdfService from "../services/DemandasIyccPesosPdfService.js"
 
 export const createDemanda = async (req, res) => {
     try {
@@ -35,29 +37,34 @@ export const createDemanda = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while creating the demanda' });
     }
 };
-
-
 export const getDemandaPdf = async (req, res) => {
     try {
         const { userId } = req;
         const { credito } = req.params;
         const user = await AbogadoDAO.getById(userId);
+
         if (!user) {
             return res.status(403).send({ error: 'Unauthorized' });
         }
 
-       const data = await DemandaIyccDAO.getByCredito(credito);
-
-       
-
-        res.sendStatus(204);
+        const data = await DemandaIyccDAO.getByCredito(credito);
+        if (!data || data.length === 0) {
+            return res.status(404).send({ error: 'Demanda not found' });
+        }
+        let pdfBuffer;
+        if (data[0].subtipo === "VSMM") {
+            const pdfService = new DemandaIyccVSMMPdfService(data[0]);
+            pdfBuffer = await pdfService.generatePdf();
+        } else if (data[0].subtipo === "Pesos") {
+            const pdfService = new DemandaIyccPesosPdfService(data[0]);
+            pdfBuffer = await pdfService.generatePdf();
+        }
+        res.status(200).send(pdfBuffer);  
     } catch (error) {
-        console.error(error);
-        res.status(500).send({ error: 'An error occurred while deleting the demanda' });
+        console.error("Error generating the PDF:", error);
+        res.status(500).send({ error: 'An error occurred while generating the PDF' });
     }
 };
-
-
 
 
 export const getAllDemandas = async (req, res) => {
@@ -137,7 +144,4 @@ export const deleteDemanda = async (req, res) => {
         res.status(500).send({ error: 'An error occurred while deleting the demanda' });
     }
 };
-
-
-
 
