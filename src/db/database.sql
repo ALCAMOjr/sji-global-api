@@ -135,6 +135,7 @@ CREATE TABLE Demandas_iycc (
   adeudo_pesos_ft VARCHAR(255), 
   calle VARCHAR(255),
   numero VARCHAR(50),
+  tipo_asentamiento ENUM('COLONIA', 'FRACCIONAMIENTO'),
   colonia_fraccionamiento VARCHAR(255),
   municipio VARCHAR(255),
   estado VARCHAR(255),
@@ -146,5 +147,6 @@ CREATE TABLE Demandas_iycc (
   fecha_requerimiento DATE,
   fecha_requerimiento_ft VARCHAR(255),
   folio INT,
-  numero_ss BIGINT
+  numero_ss BIGINT,
+  juego ENUM('1 juego de traslado', '2 juegos de traslado')
 );

@@ -8,8 +8,8 @@ class DemandaIyccDAO {
             credito, subtipo, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
             inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
             mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
-            colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio,
-            juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss
+            tipo_asentamiento, colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio,
+            juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss, juego
         } = demandaData;
     
         const values = [
@@ -17,9 +17,10 @@ class DemandaIyccDAO {
             fecha_escritura || null, fecha_escritura_ft || null, inscripcion || null, volumen || null, libro || null, 
             seccion, unidad || null, fecha || null, fecha_ft || null, monto_otorgado || null, monto_otorgado_ft || null,
             mes_primer_adeudo || null, mes_ultimo_adeudo || null, adeudo || null, adeudo_ft || null, adeudo_pesos || null, 
-            adeudo_pesos_ft || null, calle || null, numero || null, colonia_fraccionamiento || null, municipio || null, 
-            estado || null, codigo_postal || null, interes_ordinario || null, interes_moratorio || null, juzgado || null, 
-            hora_requerimiento || null, fecha_requerimiento || null, fecha_requerimiento_ft || null, folio || null, numero_ss || null
+            adeudo_pesos_ft || null, calle || null, numero || null, tipo_asentamiento || null, colonia_fraccionamiento || null, 
+            municipio || null, estado || null, codigo_postal || null, interes_ordinario || null, interes_moratorio || null, 
+            juzgado || null, hora_requerimiento || null, fecha_requerimiento || null, fecha_requerimiento_ft || null, 
+            folio || null, numero_ss || null, juego || null
         ];
     
         await pool.query(
@@ -27,15 +28,15 @@ class DemandaIyccDAO {
                 credito, subtipo, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
                 inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
                 mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
-                colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio,
-                juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                tipo_asentamiento, colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio,
+                juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss, juego
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             values
         );
     
         return await this.getByCredito(credito);
     }
-    
+        
 
     static async getAll() {
         const [rows] = await pool.query(`SELECT * FROM Demandas_iycc`);
@@ -55,8 +56,8 @@ class DemandaIyccDAO {
             subtipo, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
             inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
             mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
-            colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio, juzgado,
-            hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss
+            tipo_asentamiento, colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio, 
+            juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss, juego
         } = updatedData;
     
         await pool.query(
@@ -85,6 +86,7 @@ class DemandaIyccDAO {
                 adeudo_pesos_ft = IFNULL(?, adeudo_pesos_ft), 
                 calle = IFNULL(?, calle), 
                 numero = IFNULL(?, numero), 
+                tipo_asentamiento = IFNULL(?, tipo_asentamiento), 
                 colonia_fraccionamiento = IFNULL(?, colonia_fraccionamiento), 
                 municipio = IFNULL(?, municipio), 
                 estado = IFNULL(?, estado), 
@@ -96,20 +98,21 @@ class DemandaIyccDAO {
                 fecha_requerimiento = IFNULL(?, fecha_requerimiento), 
                 fecha_requerimiento_ft = IFNULL(?, fecha_requerimiento_ft),
                 folio = IFNULL(?, folio), 
-                numero_ss = IFNULL(?, numero_ss)
+                numero_ss = IFNULL(?, numero_ss),
+                juego = IFNULL(?, juego)
             WHERE credito = ?`,
             [
                 subtipo, acreditado, categoria, escritura, escritura_ft, fecha_escritura, fecha_escritura_ft,
                 inscripcion, volumen, libro, seccion, unidad, fecha, fecha_ft, monto_otorgado, monto_otorgado_ft,
                 mes_primer_adeudo, mes_ultimo_adeudo, adeudo, adeudo_ft, adeudo_pesos, adeudo_pesos_ft, calle, numero,
-                colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio, 
-                juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss, credito
+                tipo_asentamiento, colonia_fraccionamiento, municipio, estado, codigo_postal, interes_ordinario, interes_moratorio, 
+                juzgado, hora_requerimiento, fecha_requerimiento, fecha_requerimiento_ft, folio, numero_ss, juego, credito
             ]
         );
     
         return await this.getByCredito(credito);
     }
-    
+        
     static async delete(credito) {
         const [result] = await pool.query(
             `DELETE FROM Demandas_iycc WHERE credito = ?`,
