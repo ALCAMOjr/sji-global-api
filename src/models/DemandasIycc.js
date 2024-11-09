@@ -25,6 +25,7 @@ class Demandas_iycc {
         adeudo_pesos_ft,
         calle,
         numero,
+        tipo_asentamiento,
         colonia_fraccionamiento,
         municipio,
         estado,
@@ -37,6 +38,7 @@ class Demandas_iycc {
         fecha_requerimiento_ft,
         folio,
         numero_ss,
+        juego
 
     }) {
         this.credito = credito;
@@ -64,6 +66,7 @@ class Demandas_iycc {
         this.adeudo_pesos_ft = adeudo_pesos_ft;
         this.calle = calle;
         this.numero = numero;
+        this.tipo_asentamiento = tipo_asentamiento;
         this.colonia_fraccionamiento = colonia_fraccionamiento;
         this.municipio = municipio;
         this.estado = estado;
@@ -74,8 +77,9 @@ class Demandas_iycc {
         this.hora_requerimiento = hora_requerimiento;
         this.fecha_requerimiento = fecha_requerimiento;
         this.fecha_requerimiento_ft = fecha_requerimiento_ft;
-        this.folio = folio,
-        this.numero_ss = numero_ss
+        this.folio = folio;
+        this.numero_ss = numero_ss;
+        this.juego = juego
     }
 }
 
