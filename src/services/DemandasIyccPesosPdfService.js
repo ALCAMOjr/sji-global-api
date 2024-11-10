@@ -380,6 +380,11 @@ class DemandaIyccPesosPdfService {
           '<div style="page-break-before: always;"></div>'
         ]
       },
+      {
+        tipo: 'parrafo', contenido: [
+          '<div style="page-break-before: always;"></div>'
+        ]
+      },
 
       {
         tipo: 'romanos',
@@ -491,6 +496,11 @@ class DemandaIyccPesosPdfService {
           '<div style="text-align: center;">',
           '<span class="negrita">Fondo Nacional de la Vivienda para los Trabajadores.</span>',
           '</div>'
+        ]
+      },
+      {
+        tipo: 'parrafo', contenido: [
+          '<div style="page-break-before: always;"></div>'
         ]
       },
       {

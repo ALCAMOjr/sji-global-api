@@ -3,7 +3,8 @@ import AbogadoDAO from "../daos/AbogadoDAO.js";
 import CreditoSialDAO from "../daos/CreditosSialDAO.js";
 import DemandaIyccVSMMPdfService from "../services/DemandaIyccVSMMPdfService.js";
 import DemandaIyccPesosPdfService from "../services/DemandasIyccPesosPdfService.js"
-
+import CertificadoIyccPesosService from "../services/CertificadoIyccPesosService.js";
+import CertificadoIyccVSMMService from "../services/CertificadoIyccVSMMService.js";
 export const createDemanda = async (req, res) => {
     try {
         const { userId } = req;
@@ -57,6 +58,35 @@ export const getDemandaPdf = async (req, res) => {
             pdfBuffer = await pdfService.generatePdf();
         } else if (data[0].subtipo === "Pesos") {
             const pdfService = new DemandaIyccPesosPdfService(data[0]);
+            pdfBuffer = await pdfService.generatePdf();
+        }
+        res.status(200).send(pdfBuffer);  
+    } catch (error) {
+        console.error("Error generating the PDF:", error);
+        res.status(500).send({ error: 'An error occurred while generating the PDF' });
+    }
+};
+
+export const getDemandaCertificate = async (req, res) => {
+    try {
+        const { userId } = req;
+        const { credito } = req.params;
+        const user = await AbogadoDAO.getById(userId);
+
+        if (!user) {
+            return res.status(403).send({ error: 'Unauthorized' });
+        }
+
+        const data = await DemandaIyccDAO.getByCredito(credito);
+        if (!data || data.length === 0) {
+            return res.status(404).send({ error: 'Demanda not found' });
+        }
+        let pdfBuffer;
+        if (data[0].subtipo === "VSMM") {
+            const pdfService = new CertificadoIyccVSMMService(data[0]);
+            pdfBuffer = await pdfService.generatePdf();
+        } else if (data[0].subtipo === "Pesos") {
+            const pdfService = new CertificadoIyccPesosService(data[0]);
             pdfBuffer = await pdfService.generatePdf();
         }
         res.status(200).send(pdfBuffer);  
