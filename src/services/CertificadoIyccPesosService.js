@@ -13,37 +13,36 @@ class CertificadoIyccPesosService {
     this.contenidoDemanda = [
       {
         tipo: 'romanos', contenido: [
-          'El suscrito, hace constar que en relación al <span class="negrita">Contrato de Apertura de Crédito Simple con Garantía Hipotecaria</span>, con número de crédito <span class="negrita">«CREDITO»</span>, celebrado entre el Instituto del Fondo Nacional de la Vivienda para los Trabajadores con <<DEMANDADO_C>> C. <span class="negrita">«ACREDITADO»</span>, contenido en la <span class="negrita">Escritura Pública número «ESCRITURA» «ESCRITURA_FT»</span> de fecha <span class="negrita">«FECHA_ESCRITURA_FT»</span> e inscrita ante el Registro Público de la Propiedad del Comercio, bajo el número de inscripción <span class="negrita">«INSCRIPCION»</span>, Volumen <span class="negrita">«VOLUMEN»</span>, Libro <span class="negrita">«LIBRO»</span>, Sección <span class="negrita">«SECCION»</span>, Unidad <span class="negrita">«UNIDAD»</span>, <span class="negrita">«ESTADO»</span>, de fecha <span class="negrita">«FECHA_FT»</span>, mediante la cual se otorgó un Crédito por la Cantidad de <span class="negrita">«MONTO_OTORGADO»</span>, mismo que fue dispuesto en su totalidad a la firma del referido contrato y que a la fecha refleja un incumplimiento en el pago de sus obligaciones contraídas en el contrato antes señalado, desde la amortización correspondiente al mes de <span class="negrita">«MES_PRIMER_ADEUDO»</span>. Reflejándose en los registros que obran en el INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES que al mes de <span class="negrita">«MES_ULTIMO_ADEUDO»</span> se muestra un adeudo por concepto de Capital insoluto de <span class="negrita">«ADEUDO» «ADEUDO_PESOS»</span>, en la ciudad de México, más los intereses ordinarios y moratorios devengados y no pagados más los que se continúen devengando hasta la total liquidación.'
+          'El suscrito, hace constar que en relación al <span class="negrita">Contrato de Apertura de Crédito Simple con Garantía Hipotecaria</span>, con número de crédito <span class="negrita">«CREDITO»</span>, celebrado entre el Instituto del Fondo Nacional de la Vivienda para los Trabajadores con <<DEMANDADO_C>> C. <span class="negrita">«ACREDITADO»</span>, contenido en la <span class="negrita">Escritura Pública número «ESCRITURA» «ESCRITURA_FT»</span> de fecha <span class="negrita">«FECHA_ESCRITURA_FT»</span> e inscrita ante el Registro Público de la Propiedad del Comercio, bajo el número de inscripción <span class="negrita">«INSCRIPCION»</span>, Volumen <span class="negrita">«VOLUMEN»</span>, Libro <span class="negrita">«LIBRO»</span>, Sección <span class="negrita">«SECCION»</span>, Unidad <span class="negrita">«UNIDAD»</span>, <span class="negrita">«ESTADO»</span>, de fecha <span class="negrita">«FECHA_FT»</span>, mediante la cual se otorgó un Crédito por la Cantidad de <span class="negrita">$«MONTO_OTORGADO» («MONTO_OTORGADO_FT»)</span>, mismo que fue dispuesto en su totalidad a la firma del referido contrato y que a la fecha refleja un incumplimiento en el pago de sus obligaciones contraídas en el contrato antes señalado, desde la amortización correspondiente al mes de <span class="negrita">«MES_PRIMER_ADEUDO»</span>. Reflejándose en los registros que obran en el INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES que al mes de <span class="negrita">«MES_ULTIMO_ADEUDO»</span> se muestra un adeudo por concepto de Capital insoluto de <span class="negrita">$«ADEUDO» «ADEUDO_PESOS»</span> en la ciudad de México, más los intereses ordinarios y moratorios devengados y no pagados más los que se continúen devengando hasta la total liquidación.'
         ]
       },
-      
+
       {
         tipo: 'romanos', contenido: [
-          '<span class="negrita">EL PRESENTE DOCUMENTO LO FIRMA EL LIC. RENÉ ALEJANDRO LEÓN LÓPEZ, GERENTE DEL ÁREA DE SERVICIOS JURÍDICOS EN NUEVO LEÓN DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES; CON FUNDAMENTO EN LO DISPUESTO EN LOS ARTICULOS 23 FRACCION I DE LA LEY DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES; 1º, 3º FRACCIÓN VI, 4º FRACCIÓN XVIII Y 19º DEL REGLAMENTO INTERIOR DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES EN MATERIA DE FACULTADES COMO ORGANISMO FISCAL AUTÓNOMO, PUBLICADO EN EL DIARIO OFICIAL DE LA FEDERACIÓN EL 20 DE JUNIO DE 2008, DISPOSICIONES QUE LE FACULTAN PARA CERTIFICAR QUE TODOS LOS DATOS QUE SE IDENTIFICAN EN ESTE DOCUMENTO, COINCIDEN FIELMENTE CON LOS REGISTROS QUE OBRAN EN EL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES. CERTIFICA Y HACE CONSTAR QUE EL SIGUIENTE DOCUMENTO QUE CONSTA DE UNA FOJA QUE SE TIENE A LA VISTA ES UNA COPIA FIEL Y EXACTA DEL ORIGINAL QUE OBRA EN LOS SISTEMAS OPERATIVOS DE ESTA DELEGACIÓN, A NOMBRE DE <span class="subrayado">«ACREDITADO»</span>, CON NÚMERO DE SEGURIDAD SOCIAL «NUMERO_SS».</span>'
+          '<span class="negrita">EL PRESENTE DOCUMENTO LO FIRMA EL LIC. RENÉ ALEJANDRO LEÓN LÓPEZ, GERENTE DEL ÁREA DE SERVICIOS JURÍDICOS EN NUEVO LEÓN DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES; CON FUNDAMENTO EN LO DISPUESTO EN LOS ARTICULOS 23 FRACCION I DE LA LEY DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES; 1º, 3º FRACCIÓN VI, 4º FRACCIÓN XVIII Y 19º DEL REGLAMENTO INTERIOR DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES EN MATERIA DE FACULTADES COMO ORGANISMO FISCAL AUTÓNOMO, PUBLICADO EN EL DIARIO OFICIAL DE LA FEDERACIÓN EL 20 DE JUNIO DE 2008, DISPOSICIONES QUE LE FACULTAN PARA CERTIFICAR QUE TODOS LOS DATOS QUE SE IDENTIFICAN EN ESTE DOCUMENTO, COINCIDEN FIELMENTE CON LOS REGISTROS QUE OBRAN EN EL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES. CERTIFICA Y HACE CONSTAR QUE EL SIGUIENTE DOCUMENTO QUE CONSTA DE UNA FOJA QUE SE TIENE A LA VISTA ES UNA COPIA FIEL Y EXACTA DEL ORIGINAL QUE OBRA EN LOS SISTEMAS OPERATIVOS DE ESTA DELEGACIÓN, A NOMBRE DE <span class="subrayado">«ACREDITADO_2»</span>, CON NÚMERO DE SEGURIDAD SOCIAL «NUMERO_SS».</span>'
         ]
       },
 
       {
         tipo: 'centrado',
         contenido: [
+          '<br>',
           '<div style="text-align: center; margin-top: 40px;">',
           '<span class="negrita">Monterrey N.L., a «MES_ULTIMO_ADEUDO»</span>',
           '</div>',
-          '<br>',
           '<div style="text-align: center; margin-top: 50px;">',
           '<span class="negrita">LIC. RENÉ ALEJANDRO LEÓN LÓPEZ</span>',
           '<br><span class="negrita">GERENTE DEL ÁREA DE SERVICIOS JURÍDICOS</span>',
           '<br><span class="negrita">DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS</span>',
           '<br><span class="negrita">TRABAJADORES DELEGACIÓN NUEVO LEÓN.</span>',
           '</div>',
-          '<br><br>'
         ]
       },
 
       {
         tipo: 'alineado-izquierda',
         contenido: [
-          '<div style="text-align: left; margin-top: 50px;">',
+          '<div style="text-align: left; margin-top: 30px;">',
           '<span class="negrita">FOLIO- «FOLIO»</span>',
           '</div>',
         ]
@@ -73,6 +72,8 @@ class CertificadoIyccPesosService {
   }
 
   generarContenidoHTML(contenido, data) {
+    console.log("Data dentro de generarContenidoHTML:", data);
+    console.log("Valor de acreditado:", data.acreditado);
     let puntoVI = false;
     return contenido.map((elemento) => {
       if (elemento.tipo === 'romanos' && elemento.contenido[0].includes('<span class="negrita">VI.-</span>')) {
@@ -109,6 +110,23 @@ class CertificadoIyccPesosService {
     const [ano, mes] = fecha.split('-');
     const mesTexto = meses[parseInt(mes, 10) - 1];
     return `${mesTexto} ${ano}`;
+  }
+
+  validarYAsignarAcreditado(data, acreditado) {
+
+    if (typeof acreditado !== 'string') {
+      console.error('El valor de acreditado debe ser una cadena de texto');
+      return;
+    }
+
+    data.acreditado_2 = acreditado;
+
+    const indexCon = data.acreditado.indexOf(' CON ');
+    if (indexCon !== -1) {
+      data.acreditado_2 = data.acreditado.substring(0, indexCon);
+    }
+
+    console.log('Valor final de acreditado_2:', data.acreditado_2);
   }
 
   reemplazarPlaceholders(texto, data) {
@@ -171,7 +189,7 @@ class CertificadoIyccPesosService {
       },
       "<<UNIDAD_M>>": unidadConfig.unidad_m,
       "<<UNIDAD_C>>": unidadConfig.unidad_c,
-      "<<UNIDAD_B>>": unidadConfig.unidad_b
+      "<<UNIDAD_B>>": unidadConfig.unidad_b,
     };
 
     if (typeof texto === 'string') {
@@ -189,12 +207,17 @@ class CertificadoIyccPesosService {
         texto = texto.replace(placeholderRegex, valorCategoria);
       });
 
+      this.validarYAsignarAcreditado(data, data.acreditado);
+      reemplazos['<<ACREDITADO_2>>'] = data.acreditado_2;
+
     } else if (Array.isArray(texto)) {
       texto = texto.map((t) => this.reemplazarPlaceholders(t, data)).join(' ');
     }
 
+
     return texto;
   }
+
 
   async generatePdf() {
     try {
@@ -236,9 +259,9 @@ class CertificadoIyccPesosService {
             `;
 
       const headerTemplate = `
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 10px 3.5cm; font-size: 10px;">
-                    <img src="data:image/png;base64,${codigoBarrasBase64}" alt="Código de Barras" style="width: 27%; align-self: flex-start; margin-left: 10;" />
-                    <img src="data:image/png;base64,${logoBase64}" alt="Logo" style="width: 20%; align-self: flex-end; margin-right: 10;" />
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 25px 3.5cm; font-size: 10px;">
+                    <img src="data:image/png;base64,${logoBase64}" alt="Logo" style="width: 20%; align-self: flex-end; margin-left: 10;" />
+                    <img src="data:image/png;base64,${codigoBarrasBase64}" alt="Código de Barras" style="width: 27%; align-self: flex-start; margin-right: 0;" />
                 </div>
             `;
       const footerTemplate = `
@@ -249,16 +272,16 @@ class CertificadoIyccPesosService {
 
       const pdfBuffer = await page.pdf({
         width: "21.6cm",
-        height: "35.6cm",
+        height: "27.94cm",
         printBackground: true,
         displayHeaderFooter: true,
         headerTemplate: headerTemplate,
         footerTemplate: footerTemplate,
         margin: {
-          top: '3.5cm',
-          bottom: '1cm',
-          left: '3.5cm',
-          right: '3.5cm'
+          top: '2.54cm',
+          bottom: '2.54cm',
+          left: '1.91cm',
+          right: '1.91cm'
         }
       });
 

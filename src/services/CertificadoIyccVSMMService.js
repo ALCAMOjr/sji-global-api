@@ -16,10 +16,10 @@ class CertificadoIyccPesosService {
           'El suscrito, hace constar que en relación al <span class="negrita">Contrato de Apertura de Crédito Simple con Garantía Hipotecaria</span>, con número de crédito <span class="negrita">«CREDITO»</span>, celebrado entre el Instituto del Fondo Nacional de la Vivienda para los Trabajadores con <<DEMANDADO_C>> C. <span class="negrita">«ACREDITADO»</span>, contenido en la <span class="negrita">Escritura Pública número «ESCRITURA» «ESCRITURA_FT»</span> de fecha <span class="negrita">«FECHA_ESCRITURA_FT»</span> e inscrita ante el Registro Público de la Propiedad del Comercio, bajo el número de inscripción <span class="negrita">«INSCRIPCION»</span>, Volumen <span class="negrita">«VOLUMEN»</span>, Libro <span class="negrita">«LIBRO»</span>, Sección <span class="negrita">«SECCION»</span>, Unidad <span class="negrita">«UNIDAD»</span>, <span class="negrita">«ESTADO»</span>, de fecha <span class="negrita">«FECHA_FT»</span>, mediante la cual se otorgó un Crédito por la Cantidad de <span class="negrita">«MONTO_OTORGADO»</span>, Veces el Salario Mínimo Mensual Vigente en el Distrito Federal, mismo que fue dispuesto en su totalidad a la firma del referido contrato y que a la fecha refleja un incumplimiento en el pago de sus obligaciones contraídas en el contrato antes señalado, desde la amortización correspondiente al mes de <span class="negrita">«MES_PRIMER_ADEUDO»</span>. Reflejándose en los registros que obran en el INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES que al mes de <span class="negrita">«MES_ULTIMO_ADEUDO»</span> se muestra un adeudo por concepto de Capital insoluto de <span class="negrita">«ADEUDO»</span> Veces el Salario Mínimo Mensual Vigente en el Distrito Federal, en la ciudad de México, más los intereses ordinarios y moratorios devengados y no pagados más los que se continúen devengando hasta la total liquidación.'
         ]
       },
-      
+
       {
         tipo: 'romanos', contenido: [
-          '<span class="negrita">EL PRESENTE DOCUMENTO LO FIRMA EL LIC. RENÉ ALEJANDRO LEÓN LÓPEZ, GERENTE DEL ÁREA DE SERVICIOS JURÍDICOS EN NUEVO LEÓN DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES; CON FUNDAMENTO EN LO DISPUESTO EN LOS ARTICULOS 23 FRACCION I DE LA LEY DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES; 1º, 3º FRACCIÓN VI, 4º FRACCIÓN XVIII Y 19º DEL REGLAMENTO INTERIOR DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES EN MATERIA DE FACULTADES COMO ORGANISMO FISCAL AUTÓNOMO, PUBLICADO EN EL DIARIO OFICIAL DE LA FEDERACIÓN EL 20 DE JUNIO DE 2008, DISPOSICIONES QUE LE FACULTAN PARA CERTIFICAR QUE TODOS LOS DATOS QUE SE IDENTIFICAN EN ESTE DOCUMENTO, COINCIDEN FIELMENTE CON LOS REGISTROS QUE OBRAN EN EL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES. CERTIFICA Y HACE CONSTAR QUE EL SIGUIENTE DOCUMENTO QUE CONSTA DE UNA FOJA QUE SE TIENE A LA VISTA ES UNA COPIA FIEL Y EXACTA DEL ORIGINAL QUE OBRA EN LOS SISTEMAS OPERATIVOS DE ESTA DELEGACIÓN, A NOMBRE DE <span class="subrayado">«ACREDITADO»</span>, CON NÚMERO DE SEGURIDAD SOCIAL «NUMERO_SS».</span>'
+          '<span class="negrita">EL PRESENTE DOCUMENTO LO FIRMA EL LIC. RENÉ ALEJANDRO LEÓN LÓPEZ, GERENTE DEL ÁREA DE SERVICIOS JURÍDICOS EN NUEVO LEÓN DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES; CON FUNDAMENTO EN LO DISPUESTO EN LOS ARTICULOS 23 FRACCION I DE LA LEY DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES; 1º, 3º FRACCIÓN VI, 4º FRACCIÓN XVIII Y 19º DEL REGLAMENTO INTERIOR DEL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES EN MATERIA DE FACULTADES COMO ORGANISMO FISCAL AUTÓNOMO, PUBLICADO EN EL DIARIO OFICIAL DE LA FEDERACIÓN EL 20 DE JUNIO DE 2008, DISPOSICIONES QUE LE FACULTAN PARA CERTIFICAR QUE TODOS LOS DATOS QUE SE IDENTIFICAN EN ESTE DOCUMENTO, COINCIDEN FIELMENTE CON LOS REGISTROS QUE OBRAN EN EL INSTITUTO DEL FONDO NACIONAL DE LA VIVIENDA PARA LOS TRABAJADORES. CERTIFICA Y HACE CONSTAR QUE EL SIGUIENTE DOCUMENTO QUE CONSTA DE UNA FOJA QUE SE TIENE A LA VISTA ES UNA COPIA FIEL Y EXACTA DEL ORIGINAL QUE OBRA EN LOS SISTEMAS OPERATIVOS DE ESTA DELEGACIÓN, A NOMBRE DE <span class="subrayado">«ACREDITADO_2»</span>, CON NÚMERO DE SEGURIDAD SOCIAL «NUMERO_SS».</span>'
         ]
       },
 
@@ -111,6 +111,23 @@ class CertificadoIyccPesosService {
     return `${mesTexto} ${ano}`;
   }
 
+  validarYAsignarAcreditado(data, acreditado) {
+
+    if (typeof acreditado !== 'string') {
+      console.error('El valor de acreditado debe ser una cadena de texto');
+      return;
+    }
+
+    data.acreditado_2 = acreditado;
+
+    const indexCon = data.acreditado.indexOf(' CON ');
+    if (indexCon !== -1) {
+      data.acreditado_2 = data.acreditado.substring(0, indexCon);
+    }
+
+    console.log('Valor final de acreditado_2:', data.acreditado_2);
+  }
+
   reemplazarPlaceholders(texto, data) {
     const categoria = data.categoria || 'Demandado';
     const municipio = data.municipio || '';
@@ -188,6 +205,9 @@ class CertificadoIyccPesosService {
         const placeholderRegex = new RegExp(ph, 'g');
         texto = texto.replace(placeholderRegex, valorCategoria);
       });
+
+      this.validarYAsignarAcreditado(data, data.acreditado);
+      reemplazos['<<ACREDITADO_2>>'] = data.acreditado_2;
 
     } else if (Array.isArray(texto)) {
       texto = texto.map((t) => this.reemplazarPlaceholders(t, data)).join(' ');
